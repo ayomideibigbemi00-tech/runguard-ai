@@ -30,7 +30,7 @@ from app.services.live_prices import record_price_snapshot
 # CoinGecko's current Public API guidance varies by conditions and documents
 # 5-15 requests/minute for the public API. We therefore default conservatively
 # to 10 RPM unless the user explicitly configures a higher plan limit.
-DEFAULT_REQUESTS_PER_MINUTE = 10
+DEFAULT_REQUESTS_PER_MINUTE = 30
 REQUESTS_PER_MINUTE = max(
     1,
     int(os.getenv('COINGECKO_REQUESTS_PER_MINUTE', str(DEFAULT_REQUESTS_PER_MINUTE))),

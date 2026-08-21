@@ -58,7 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadLivePrices() {
     if (!coinSelect || !livePrice) return;
     try {
-      const response = await fetch('/api/prices');
+      // CRITICAL: Added a timeout so the UI doesn't hang forever
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+      const response = await fetch('/api/prices', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
       if (!response.ok) throw new Error('Live price service unavailable');
       const body = await response.json();
       currentPrices = body.prices || {};
@@ -71,7 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
       
       updateSelectedPrice();
     } catch (error) {
-      livePrice.textContent = 'Live price unavailable';
+      // Don't show "Live price unavailable" immediately - try again in 5s
+      console.error('Failed to load live prices:', error);
+      setTimeout(loadLivePrices, 5000);
     }
   }
   

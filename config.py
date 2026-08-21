@@ -9,8 +9,11 @@ MODELS_DIR = DATA_DIR / 'models'
 VS_CURRENCY = os.getenv('COINGECKO_VS_CURRENCY', 'usd')
 COINGECKO_BASE_URL = os.getenv('COINGECKO_BASE_URL', 'https://api.coingecko.com/api/v3')
 COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '').strip()
-CACHE_EXPIRY_HOURS = float(os.getenv('CACHE_EXPIRY_HOURS', '24'))
-REQUEST_TIMEOUT_SECONDS = float(os.getenv('REQUEST_TIMEOUT_SECONDS', '20'))
+
+# CRITICAL: Lower this to 0.1 hours (6 minutes) to prevent 429s!
+CACHE_EXPIRY_HOURS = float(os.getenv('CACHE_EXPIRY_HOURS', '0.1'))
+
+REQUEST_TIMEOUT_SECONDS = float(os.getenv('REQUEST_TIMEOUT_SECONDS', '30'))
 
 WINDOW_SIZE = 30
 TRAIN_RATIO = 0.70
