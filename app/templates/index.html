@@ -1,0 +1,8 @@
+{% extends 'base.html' %}{% block title %}Runguard AI · Home{% endblock %}
+{% block content %}
+<section class="hero container">
+  <div><p class="eyebrow">MULTI-HORIZON CRYPTO FORECASTING</p><h1>See the next move<br><span>before it happens.</span></h1><p class="lead">Runguard AI uses a neural network built from scratch with NumPy to forecast Bitcoin from hourly or daily candles.</p><div class="actions"><a class="btn primary" href="/predict">Make a prediction →</a><a class="btn ghost" href="/model">See the model</a></div></div>
+  <div class="hero-card"><div class="glow"></div><div class="stat"><span>MODEL</span><strong>NumPy MLP</strong></div><div class="stat"><span>DATA</span><strong>Hourly + Daily</strong></div><div class="stat"><span>HORIZON</span><strong>1 hour → 30 days</strong></div></div>
+</section>
+<section class="grid container three"><article><span class="icon">⚡</span><h3>Immediate</h3><p>Select a timeframe and get a result from the website in the same request.</p></article><article><span class="icon">📈</span><h3>Multi-horizon</h3><p>Hourly forecasts for short-term moves and daily forecasts for longer horizons.</p></article><article><span class="icon">🧠</span><h3>From scratch</h3><p>No TensorFlow or Keras. Forward pass, backpropagation and training live in the project.</p></article></section>
+{% endblock %}

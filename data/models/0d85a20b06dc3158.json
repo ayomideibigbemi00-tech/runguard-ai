@@ -1,0 +1,17 @@
+{
+  "input_size": 360,
+  "hidden_size": 48,
+  "coin_id": "fantom",
+  "coin_name": "Fantom",
+  "interval": "hourly",
+  "horizon": 24,
+  "window_size": 30,
+  "feature_count": 13,
+  "data_last_timestamp": "2026-08-21 11:00:00+00:00",
+  "data_source": "CoinGecko market data",
+  "validation_loss": 0.2838082633031699,
+  "validation_mae_pct": 16.445696719117436,
+  "baseline_validation_mae_pct": 12.322258044151397,
+  "ensemble_alpha": 0.1,
+  "deployment_strategy": "hybrid"
+}

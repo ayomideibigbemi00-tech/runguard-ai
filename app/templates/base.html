@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Runguard AI{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body>
+<header class="nav-wrap">
+  <nav class="nav container">
+    <a class="brand" href="/"><span class="brand-mark">RG</span><span>Runguard <b>AI</b></span></a>
+    <div class="nav-links">
+      <a class="{% if page == 'home' %}active{% endif %}" href="/">Home</a>
+      <a class="{% if page == 'model' %}active{% endif %}" href="/model">Model</a>
+      <a class="{% if page == 'predict' %}active{% endif %}" href="/predict">Predict</a>
+      <a class="{% if page == 'about' %}active{% endif %}" href="/about">About</a>
+    </div>
+    <div class="theme-picker" aria-label="Choose theme">
+      <button data-theme-choice="light">☀️</button><button data-theme-choice="dark">🌙</button><button data-theme-choice="rose">🌹</button><button data-theme-choice="amber">🟡</button>
+    </div>
+  </nav>
+</header>
+<main>{% block content %}{% endblock %}</main>
+<footer class="footer container">Runguard AI · NumPy neural network · 50-coin forecasting</footer>
+<script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+</body>
+</html>

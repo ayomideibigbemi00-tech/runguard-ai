@@ -1,0 +1,34 @@
+[
+  {
+    "coin_id": "aptos",
+    "interval": "hourly",
+    "attempt": 1,
+    "reason": "CoinGecko HTTP 429 for aptos/hourly. The job has been persisted for later retry.",
+    "not_before": 1787312710.9379754,
+    "updated_at": 1787312650.9382093
+  },
+  {
+    "coin_id": "arbitrum",
+    "interval": "daily",
+    "attempt": 1,
+    "reason": "CoinGecko HTTP 429 for arbitrum/daily. The job has been persisted for later retry.",
+    "not_before": 1787312710.9164917,
+    "updated_at": 1787312656.9167836
+  },
+  {
+    "coin_id": "arbitrum",
+    "interval": "hourly",
+    "attempt": 1,
+    "reason": "CoinGecko HTTP 429 for arbitrum/hourly. The job has been persisted for later retry.",
+    "not_before": 1787312710.9456146,
+    "updated_at": 1787312662.946325
+  },
+  {
+    "coin_id": "avalanche-2",
+    "interval": "daily",
+    "attempt": 1,
+    "reason": "CoinGecko HTTP 429 for avalanche-2/daily. The job has been persisted for later retry.",
+    "not_before": 1787312711.2284029,
+    "updated_at": 1787312681.2291439
+  }
+]
