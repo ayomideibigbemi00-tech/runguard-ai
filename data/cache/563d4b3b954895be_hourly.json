@@ -2,7 +2,7 @@
   "coin_id": "aave",
   "interval": "hourly",
   "source": "CoinGecko market data",
-  "cached_at_utc": "2026-08-21T11:43:47.695489+00:00",
-  "last_timestamp": "2026-08-21 11:00:00+00:00",
+  "cached_at_utc": "2026-08-21T23:07:27.432123+00:00",
+  "last_timestamp": "2026-08-21 23:00:00+00:00",
   "rows": 2400
 }

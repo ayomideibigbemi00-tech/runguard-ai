@@ -1,34 +1,74 @@
 [
   {
-    "coin_id": "aptos",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for aptos/hourly. The job has been persisted for later retry.",
-    "not_before": 1787312710.9379754,
-    "updated_at": 1787312650.9382093
-  },
-  {
-    "coin_id": "arbitrum",
+    "coin_id": "bitcoin",
     "interval": "daily",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for arbitrum/daily. The job has been persisted for later retry.",
-    "not_before": 1787312710.9164917,
-    "updated_at": 1787312656.9167836
+    "attempt": 6,
+    "reason": "CoinGecko network request failed for bitcoin/daily: <urlopen error [Errno 11001] getaddrinfo failed>",
+    "not_before": 1787354342.4961314,
+    "updated_at": 1787354337.4964833
   },
   {
-    "coin_id": "arbitrum",
+    "coin_id": "ethereum",
     "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for arbitrum/hourly. The job has been persisted for later retry.",
-    "not_before": 1787312710.9456146,
-    "updated_at": 1787312662.946325
+    "attempt": 11,
+    "reason": "CoinGecko network request failed for ethereum/hourly: <urlopen error [Errno 11002] getaddrinfo failed>",
+    "not_before": 1787354398.6640882,
+    "updated_at": 1787354393.6646566
   },
   {
-    "coin_id": "avalanche-2",
+    "coin_id": "ethereum",
     "interval": "daily",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for avalanche-2/daily. The job has been persisted for later retry.",
-    "not_before": 1787312711.2284029,
-    "updated_at": 1787312681.2291439
+    "attempt": 6,
+    "reason": "CoinGecko network request failed for ethereum/daily: <urlopen error [Errno 11001] getaddrinfo failed>",
+    "not_before": 1787354441.0068746,
+    "updated_at": 1787354436.007519
+  },
+  {
+    "coin_id": "tether",
+    "interval": "hourly",
+    "attempt": 11,
+    "reason": "CoinGecko network request failed for tether/hourly: <urlopen error [Errno 11002] getaddrinfo failed>",
+    "not_before": 1787354482.0243807,
+    "updated_at": 1787354477.0249093
+  },
+  {
+    "coin_id": "tether",
+    "interval": "daily",
+    "attempt": 6,
+    "reason": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11002] getaddrinfo failed>",
+    "not_before": 1787354509.601865,
+    "updated_at": 1787354504.6020725
+  },
+  {
+    "coin_id": "binancecoin",
+    "interval": "hourly",
+    "attempt": 11,
+    "reason": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>",
+    "not_before": 1787354545.117832,
+    "updated_at": 1787354540.1180105
+  },
+  {
+    "coin_id": "binancecoin",
+    "interval": "daily",
+    "attempt": 6,
+    "reason": "CoinGecko network request failed for binancecoin/daily: <urlopen error [Errno 11001] getaddrinfo failed>",
+    "not_before": 1787354569.7061813,
+    "updated_at": 1787354564.706997
+  },
+  {
+    "coin_id": "solana",
+    "interval": "hourly",
+    "attempt": 11,
+    "reason": "CoinGecko network request failed for solana/hourly: <urlopen error [Errno 11001] getaddrinfo failed>",
+    "not_before": 1787354630.1184506,
+    "updated_at": 1787354625.1188045
+  },
+  {
+    "coin_id": "solana",
+    "interval": "daily",
+    "attempt": 6,
+    "reason": "CoinGecko network request failed for solana/daily: <urlopen error [Errno 11001] getaddrinfo failed>",
+    "not_before": 1787354643.5955372,
+    "updated_at": 1787354638.5960314
   }
 ]
