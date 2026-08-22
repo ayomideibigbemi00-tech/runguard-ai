@@ -4,14 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Runguard AI{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 <header class="nav-wrap">
-  <nav class="nav container">
+  <nav class="nav">
     <a class="brand" href="/">
       <span class="brand-logo">
-        <span class="logo-main">RUNGUARD</span>
+        <span class="logo-main">RUNGURD</span>
         <span class="logo-sub">AI</span>
       </span>
     </a>
@@ -33,7 +36,7 @@
   </nav>
 </header>
 <main>{% block content %}{% endblock %}</main>
-<footer class="footer container">Runguard AI · NumPy neural network · 50-coin forecasting</footer>
+<footer class="footer">Runguard AI · NumPy neural network · Multi-horizon crypto forecasting</footer>
 <script src="/static/js/app.js" defer></script>
 </body>
 </html>

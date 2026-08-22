@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block title %}Runguard AI · Home{% endblock %}
 {% block content %}
-<section class="hero container">
+<section class="hero">
   <div class="hero-content">
-    <p class="eyebrow">MULTI-HORIZON CRYPTO FORECASTING</p>
+    <p class="eyebrow">Multi-Horizon Crypto Forecasting</p>
     <h1>Get a glimpse<br>of the future.</h1>
     <p class="lead">Runguard AI uses a neural network built from scratch with NumPy to forecast cryptocurrencies across multiple timeframes.</p>
     <div class="actions">
@@ -13,35 +13,27 @@
   </div>
 </section>
 
-<section class="movers container">
-  <h2>Top Movers (24h)</h2>
+<section class="movers">
+  <h2>Market Movers</h2>
   <div class="grid two">
     <div class="panel">
       <h3>🚀 Top Gainers</h3>
       <table class="movers-table">
-        <thead>
-          <tr><th>Coin</th><th>Price</th></tr>
-        </thead>
-        <tbody id="gainers-list">
-          <tr><td colspan="2" class="muted">Loading...</td></tr>
-        </tbody>
+        <thead><tr><th>Coin</th><th>Price</th></tr></thead>
+        <tbody id="gainers-list"><tr><td colspan="2">Loading...</td></tr></tbody>
       </table>
     </div>
     <div class="panel">
       <h3>📉 Top Losers</h3>
       <table class="movers-table">
-        <thead>
-          <tr><th>Coin</th><th>Price</th></tr>
-        </thead>
-        <tbody id="losers-list">
-          <tr><td colspan="2" class="muted">Loading...</td></tr>
-        </tbody>
+        <thead><tr><th>Coin</th><th>Price</th></tr></thead>
+        <tbody id="losers-list"><tr><td colspan="2">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
 </section>
 
-<section class="features container">
+<section class="features">
   <div class="grid three">
     <article>
       <div class="icon">⚡</div>

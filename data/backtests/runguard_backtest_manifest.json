@@ -1,0 +1,215 @@
+{
+  "generated_at_utc": "2026-08-22T13:10:47.027362+00:00",
+  "coin_count_requested": 20,
+  "intervals_requested": [
+    "hourly",
+    "daily"
+  ],
+  "expected_result_rows": 340,
+  "successful_result_rows": 317,
+  "failure_count": 29,
+  "failures_observed": [
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "error": "[SSL: SSLV3_ALERT_BAD_RECORD_MAC] ssl/tls alert bad record mac (_ssl.c:2713)"
+    },
+    {
+      "coin_id": "chainlink",
+      "interval": "daily",
+      "error": "[SSL: SSLV3_ALERT_BAD_RECORD_MAC] ssl/tls alert bad record mac (_ssl.c:2713)"
+    },
+    {
+      "coin_id": "hedera-hashgraph",
+      "interval": "hourly",
+      "error": "[SSL: SSLV3_ALERT_BAD_RECORD_MAC] ssl/tls alert bad record mac (_ssl.c:2713)"
+    },
+    {
+      "coin_id": "litecoin",
+      "interval": "hourly",
+      "error": "[SSL: SSLV3_ALERT_BAD_RECORD_MAC] ssl/tls alert bad record mac (_ssl.c:2713)"
+    },
+    {
+      "coin_id": "ripple",
+      "interval": "hourly",
+      "error": "CoinGecko network request failed for ripple/hourly: <urlopen error [SSL: SSLV3_ALERT_ILLEGAL_PARAMETER] ssl/tls alert illegal parameter (_ssl.c:1082)>"
+    },
+    {
+      "coin_id": "uniswap",
+      "interval": "hourly",
+      "error": "CoinGecko network request failed for uniswap/hourly: <urlopen error [SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1082)>"
+    },
+    {
+      "coin_id": "ethereum",
+      "interval": "hourly",
+      "horizon": 6,
+      "stage": "backtest",
+      "error": "[SSL: SSLV3_ALERT_BAD_RECORD_MAC] ssl/tls alert bad record mac (_ssl.c:2713)"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "hourly",
+      "horizon": 72,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "hourly",
+      "horizon": 168,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "hourly",
+      "horizon": 336,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "hourly",
+      "horizon": 720,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "daily",
+      "horizon": 1,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "daily",
+      "horizon": 2,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "daily",
+      "horizon": 3,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "daily",
+      "horizon": 7,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "daily",
+      "horizon": 14,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "tether",
+      "interval": "daily",
+      "horizon": 30,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for tether/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 1,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 2,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 3,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 6,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 12,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 24,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 48,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 72,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 168,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 336,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "hourly",
+      "horizon": 720,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/hourly: <urlopen error [Errno 11001] getaddrinfo failed>"
+    },
+    {
+      "coin_id": "binancecoin",
+      "interval": "daily",
+      "horizon": 1,
+      "stage": "backtest",
+      "error": "CoinGecko network request failed for binancecoin/daily: <urlopen error [Errno 11001] getaddrinfo failed>"
+    }
+  ],
+  "pending_retry_queue": [],
+  "elapsed_seconds": 38866.52,
+  "data_source": "CoinGecko market data only; synthetic fallback disabled",
+  "cache_strategy": "Persistent local cache; one ingestion pass before local backtesting",
+  "rate_limit_strategy": "Sliding-window limiter + retry queue + Retry-After aware exponential backoff",
+  "notes": [
+    "The backtest reads local CoinGecko cache files after ingestion and does not call CoinGecko per horizon.",
+    "A run with pending retry jobs is intentionally incomplete and exits nonzero.",
+    "Successful downloads are written immediately so interrupted runs can resume.",
+    "Hourly data is limited by CoinGecko to the documented historical window for the configured plan."
+  ]
+}

@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}Runguard AI · Charts{% endblock %}
 {% block content %}
-<section class="page container">
-  <p class="eyebrow">LIVE CHARTS</p>
+<section class="page">
+  <p class="eyebrow">Live Charts</p>
   <h1>Coin Price Charts</h1>
   <p class="lead">Select a coin to view its live price chart.</p>
   
@@ -17,10 +17,8 @@
   
   <div class="chart-container">
     <canvas id="price-chart"></canvas>
-    <p id="chart-status" class="muted">Loading chart...</p>
+    <p id="chart-status">Loading chart...</p>
   </div>
 </section>
-
-<!-- Load Chart.js from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
 {% endblock %}

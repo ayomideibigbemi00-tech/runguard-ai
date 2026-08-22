@@ -2,11 +2,9 @@
 (function() {
   const themeSelect = document.getElementById('theme-select');
   const root = document.documentElement;
-  
   const savedTheme = localStorage.getItem('runguard-theme') || 'dark';
   root.dataset.theme = savedTheme;
   themeSelect.value = savedTheme;
-  
   themeSelect.addEventListener('change', function() {
     root.dataset.theme = this.value;
     localStorage.setItem('runguard-theme', this.value);
@@ -27,27 +25,20 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (data.gainers && data.gainers.length > 0) {
         gainersList.innerHTML = data.gainers.map(coin => `
-          <tr>
-            <td>${coin.name} (${coin.symbol})</td>
-            <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
-          </tr>
+          <tr><td>${coin.name} (${coin.symbol})</td><td class="positive">$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td></tr>
         `).join('');
       }
       
       if (data.losers && data.losers.length > 0) {
         losersList.innerHTML = data.losers.map(coin => `
-          <tr>
-            <td>${coin.name} (${coin.symbol})</td>
-            <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
-          </tr>
+          <tr><td>${coin.name} (${coin.symbol})</td><td class="negative">$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td></tr>
         `).join('');
       }
     } catch (error) {
-      gainersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
-      losersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
+      gainersList.innerHTML = '<tr><td colspan="2">Unable to load</td></tr>';
+      losersList.innerHTML = '<tr><td colspan="2">Unable to load</td></tr>';
     }
   }
-  
   fetchMovers();
   setInterval(fetchMovers, 60000);
 });
@@ -76,14 +67,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     horizonSelect.dataset.value = horizonSelect.dataset.selected || '1';
     populate();
-    
     intervalButtons.forEach(btn => btn.addEventListener('click', () => {
       intervalButtons.forEach(b => b.classList.toggle('active', b === btn));
       intervalInput.value = btn.dataset.interval;
       horizonSelect.dataset.value = '1';
       populate();
     }));
-    
     horizonSelect.addEventListener('change', () => { horizonSelect.dataset.value = horizonSelect.value; });
     
     form?.addEventListener('submit', () => {
@@ -118,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchLivePrice, 60000);
 });
 
-// Chart.js implementation (fixed for endless drag)
+// Chart.js implementation
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('price-chart');
   const coinSelect = document.getElementById('chart-coin');
@@ -143,15 +132,14 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderChart(data) {
     const labels = data.labels || [];
     const prices = data.prices || [];
-    
     if (chart) chart.destroy();
     
     const ctx = canvas.getContext('2d');
-    
     const root = document.documentElement;
-    const textColor = getComputedStyle(root).getPropertyValue('--text').trim() || '#e6edf3';
-    const gridColor = getComputedStyle(root).getPropertyValue('--border').trim() || '#30363d';
-    const accentColor = getComputedStyle(root).getPropertyValue('--accent').trim() || '#58a6ff';
+    const textColor = getComputedStyle(root).getPropertyValue('--text').trim() || '#ffffff';
+    const gridColor = getComputedStyle(root).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.1)';
+    const accentColor = getComputedStyle(root).getPropertyValue('--accent').trim() || '#7c3aed';
+    const accent2 = getComputedStyle(root).getPropertyValue('--accent-2').trim() || '#06b6d4';
     
     chart = new Chart(ctx, {
       type: 'line',
@@ -161,8 +149,8 @@ document.addEventListener('DOMContentLoaded', function() {
           label: 'Price (USD)',
           data: prices,
           borderColor: accentColor,
-          backgroundColor: 'rgba(88, 166, 255, 0.1)',
-          borderWidth: 2,
+          backgroundColor: 'rgba(124, 58, 237, 0.1)',
+          borderWidth: 3,
           fill: true,
           tension: 0.4,
           pointRadius: 0,
@@ -172,33 +160,19 @@ document.addEventListener('DOMContentLoaded', function() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false, // Disable animation to prevent layout issues
+        animation: false,
         plugins: {
-          legend: {
-            labels: {
-              color: textColor,
-              font: { size: 14 }
-            }
-          }
+          legend: { labels: { color: textColor, font: { size: 14 } } }
         },
         scales: {
-          x: {
-            ticks: { color: textColor, maxTicksLimit: 10 },
-            grid: { color: gridColor }
-          },
-          y: {
-            ticks: { color: textColor },
-            grid: { color: gridColor }
-          }
+          x: { ticks: { color: textColor, maxTicksLimit: 10 }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor }, grid: { color: gridColor } }
         }
       }
     });
   }
   
-  coinSelect.addEventListener('change', function() {
-    fetchChartData(this.value);
-  });
-  
+  coinSelect.addEventListener('change', function() { fetchChartData(this.value); });
   fetchChartData(coinSelect.value);
 });
 
@@ -223,7 +197,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (_) {}
   }
-  
   if (resultPanel) {
     refreshPredictionResult();
     setInterval(refreshPredictionResult, 30000);
