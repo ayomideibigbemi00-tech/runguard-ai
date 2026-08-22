@@ -13,6 +13,47 @@
   });
 })();
 
+// Top Movers (Home page)
+document.addEventListener('DOMContentLoaded', function() {
+  const gainersList = document.getElementById('gainers-list');
+  const losersList = document.getElementById('losers-list');
+  if (!gainersList || !losersList) return;
+  
+  async function fetchMovers() {
+    try {
+      const response = await fetch('/api/movers');
+      if (!response.ok) throw new Error('Failed to fetch movers');
+      const data = await response.json();
+      
+      // Render gainers
+      if (data.gainers && data.gainers.length > 0) {
+        gainersList.innerHTML = data.gainers.map(coin => `
+          <tr>
+            <td>${coin.name} (${coin.symbol})</td>
+            <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
+          </tr>
+        `).join('');
+      }
+      
+      // Render losers
+      if (data.losers && data.losers.length > 0) {
+        losersList.innerHTML = data.losers.map(coin => `
+          <tr>
+            <td>${coin.name} (${coin.symbol})</td>
+            <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
+          </tr>
+        `).join('');
+      }
+    } catch (error) {
+      gainersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
+      losersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
+    }
+  }
+  
+  fetchMovers();
+  setInterval(fetchMovers, 60000);
+});
+
 // Prediction form logic
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('#predict-form');
@@ -53,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Live price for selected coin only
+// Live price for selected coin only (Predict page)
 document.addEventListener('DOMContentLoaded', function() {
   const coinSelect = document.querySelector('#coin');
   const livePrice = document.querySelector('#current-price');
@@ -79,12 +120,14 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchLivePrice, 60000);
 });
 
-// Charts page
+// Chart.js implementation
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('price-chart');
   const coinSelect = document.getElementById('chart-coin');
   const status = document.getElementById('chart-status');
   if (!canvas || !coinSelect) return;
+  
+  let chart = null;
   
   async function fetchChartData(coinId) {
     status.textContent = 'Loading chart...';
@@ -100,39 +143,57 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function renderChart(data) {
+    const labels = data.labels || [];
     const prices = data.prices || [];
+    
+    if (chart) chart.destroy();
+    
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.parentElement.clientWidth - 40;
-    canvas.height = 400;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--panel') || '#161b22';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const root = document.documentElement;
+    const textColor = getComputedStyle(root).getPropertyValue('--text').trim() || '#e6edf3';
+    const gridColor = getComputedStyle(root).getPropertyValue('--border').trim() || '#30363d';
+    const accentColor = getComputedStyle(root).getPropertyValue('--accent').trim() || '#58a6ff';
     
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const range = maxPrice - minPrice || 1;
-    
-    ctx.strokeStyle = '#30363d';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 5; i++) {
-      const y = (canvas.height / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
-    
-    ctx.strokeStyle = '#58a6ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    prices.forEach((price, i) => {
-      const x = (i / (prices.length - 1)) * canvas.width;
-      const y = canvas.height - ((price - minPrice) / range) * canvas.height;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Price (USD)',
+          data: prices,
+          borderColor: accentColor,
+          backgroundColor: 'rgba(88, 166, 255, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: textColor,
+              font: { size: 14 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: textColor, maxTicksLimit: 10 },
+            grid: { color: gridColor }
+          },
+          y: {
+            ticks: { color: textColor },
+            grid: { color: gridColor }
+          }
+        }
+      }
     });
-    ctx.stroke();
   }
   
   coinSelect.addEventListener('change', function() {

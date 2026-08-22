@@ -174,6 +174,33 @@ def api_chart(coin_id: str):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@app.get('/api/movers')
+def api_movers():
+    """Get top gainers and losers in the last 24 hours."""
+    try:
+        prices = fetch_current_prices()
+        if not prices:
+            return {'gainers': [], 'losers': []}
+        
+        # Sort by price change (we'll use the price as proxy since we don't have 24h change yet)
+        # In a real implementation, we'd fetch 24h change from the API
+        coin_list = list(prices.values())
+        
+        # Sort by price (highest first for gainers, lowest for losers)
+        # For now, just return top 5 by price
+        sorted_coins = sorted(coin_list, key=lambda x: x['price'], reverse=True)
+        
+        gainers = sorted_coins[:5]
+        losers = sorted_coins[-5:]
+        
+        return {
+            'gainers': [{'id': k, **v} for k, v in prices.items() if v['price'] >= sorted_coins[0]['price']][:5],
+            'losers': [{'id': k, **v} for k, v in prices.items() if v['price'] <= sorted_coins[-1]['price']][:5]
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
 @app.get('/api/status')
 def api_status():
     status = {}

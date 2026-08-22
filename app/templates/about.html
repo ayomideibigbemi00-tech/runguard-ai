@@ -1,2 +1,66 @@
-{% extends 'base.html' %}{% block title %}Runguard AI · About{% endblock %}
-{% block content %}<section class="container page"><p class="eyebrow">ABOUT</p><h1>Runguard AI</h1><p class="lead">A website-first crypto prediction MVP designed around transparent data flow, a NumPy-only neural network, and user-selected prediction horizons.</p><div class="grid two"><article class="panel"><h3>Data handling</h3><p>Hourly data is refreshed from CoinGecko's market-chart endpoint and capped at the documented 100-day hourly window. Daily data uses the daily market-chart interval.</p></article><article class="panel"><h3>Reliability</h3><p>Downloaded datasets are cached for 24 hours. If the network is unavailable and no cache exists, the development MVP uses deterministic synthetic data so the interface can still be exercised.</p></article></div></section>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Runguard AI · About{% endblock %}
+{% block content %}
+<section class="page container">
+  <p class="eyebrow">ABOUT</p>
+  <h1>How Runguard AI Works</h1>
+  <p class="lead">A deep dive into the neural network, data pipeline, and prediction engine.</p>
+
+  <div class="grid two" style="margin-top: 40px;">
+    <article>
+      <div class="icon">🧠</div>
+      <h3>Neural Network</h3>
+      <p>Our model is a feedforward neural network built from scratch with NumPy. It uses 12 technical features including OHLCV data, returns, moving averages, and volatility to make predictions.</p>
+      <ul>
+        <li><strong>Input Layer:</strong> 12 features</li>
+        <li><strong>Hidden Layers:</strong> 32 neurons with ReLU activation</li>
+        <li><strong>Output Layer:</strong> 1 neuron (predicted price)</li>
+        <li><strong>Loss Function:</strong> Mean Squared Error (MSE)</li>
+        <li><strong>Optimizer:</strong> Gradient Descent</li>
+      </ul>
+    </article>
+
+    <article>
+      <div class="icon">📊</div>
+      <h3>Feature Engineering</h3>
+      <p>Raw price data is transformed into meaningful features that help the model learn patterns.</p>
+      <ul>
+        <li><strong>OHLCV:</strong> Open, High, Low, Close, Volume</li>
+        <li><strong>Returns:</strong> 1-period, 3-period, 6-period returns</li>
+        <li><strong>Moving Averages:</strong> SMA-7, SMA-20</li>
+        <li><strong>Volatility:</strong> 7-period volatility</li>
+        <li><strong>Range:</strong> High-Low percentage range</li>
+      </ul>
+    </article>
+
+    <article>
+      <div class="icon">🔄</div>
+      <h3>Ensemble Strategy</h3>
+      <p>The model is compared against a simple recent-return baseline on a validation set. A blend weight is selected from validation data, so the final prediction doesn't automatically trust the neural network when it performs worse than the baseline.</p>
+    </article>
+
+    <article>
+      <div class="icon">⚡</div>
+      <h3>Live Anchoring</h3>
+      <p>Every prediction is anchored to the actual live CoinGecko price captured at the moment of prediction. This ensures the forecast is always based on the most recent market data.</p>
+    </article>
+  </div>
+
+  <div class="panel" style="margin-top: 40px;">
+    <h3>Data Flow</h3>
+    <div class="pipeline">
+      <span>CoinGecko API</span>
+      <span>→</span>
+      <span>Local Cache</span>
+      <span>→</span>
+      <span>Feature Engineering</span>
+      <span>→</span>
+      <span>Model Training</span>
+      <span>→</span>
+      <span>Live Prediction</span>
+      <span>→</span>
+      <span>Result Display</span>
+    </div>
+  </div>
+</section>
+{% endblock %}

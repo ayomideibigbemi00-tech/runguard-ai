@@ -1,86 +1,136 @@
-# Runguard AI MVP Rebuild
+# Runguard AI
 
-A website-first 50-coin crypto prediction MVP with:
+## Multi-Horizon Cryptocurrency Forecasting with a Neural Network
 
-- FastAPI backend
-- Separate Home / Model / Predict / About pages
-- Four themes: light, dark, rose, amber
-- Exactly 50 selectable crypto assets
-- Hourly and daily market-chart data
-- User-selected coin, candle interval, and prediction horizon
-- Immediate browser → API → model → result workflow
-- Neural network implemented from scratch with NumPy
-- 24-hour persistent local market-data cache
-- Persistent CoinGecko retry queue for 429/transient failures
-- Sliding-window request limiter with configurable RPM
-- Retry-After aware exponential backoff
-- Strict real-data ingestion mode with synthetic fallback disabled
+Runguard AI is a web application that uses a neural network built from scratch with NumPy to forecast cryptocurrency prices across multiple timeframes. It provides live price data, interactive charts, and prediction tools for up to 50 cryptocurrencies.
 
-## Run on Windows
+---
 
-1. Create/activate a virtual environment.
-2. `pip install -r requirements.txt`
-3. Optional: set `COINGECKO_API_KEY` if your CoinGecko plan requires authentication.
-4. Run `run_website.bat`.
-5. Open http://127.0.0.1:8765
+## 📖 Table of Contents
 
-## Important data note
+1. [Overview](#overview)
+2. [Features](#features)
+3. [How It Works](#how-it-works)
+4. [Tech Stack](#tech-stack)
+5. [Neural Network Architecture](#neural-network-architecture)
+6. [Data Pipeline](#data-pipeline)
+7. [Backtesting](#backtesting)
+8. [Live Deployment](#live-deployment)
+9. [Future Improvements](#future-improvements)
 
-The application treats CoinGecko as the external source of truth and stores successful historical downloads locally. The backtester does not call CoinGecko once per horizon; it ingests each coin/interval dataset once, then reads the local cache for all horizons.
+---
 
-CoinGecko's current guidance should be treated conservatively: the Public API documents 5-15 calls/minute depending on conditions, while a Demo account is documented at 30 calls/minute. Runguard therefore defaults to 10 requests/minute and allows an explicit `COINGECKO_REQUESTS_PER_MINUTE` override. Every retry goes through the same limiter, 429 responses are retried with cooldown/backoff, and retryable jobs are persisted in `data/cache/retry_queue.json`.
+## Overview
 
-A 429 does not cause Runguard to abandon a coin. The ingestion queue revisits that coin after its cooldown. Successful datasets are written immediately, so an interrupted run can resume without redownloading completed jobs.
+Cryptocurrency markets are notoriously volatile and difficult to predict. Runguard AI attempts to address this challenge by applying a **feedforward neural network** to historical price data, aiming to forecast future price movements with a **multi-horizon approach** (from 1 hour to 30 days).
 
+The project is designed as a **website-first MVP**, allowing users to:
+- Select from a curated list of cryptocurrencies
+- Choose between hourly or daily candle data
+- Predict future prices across various timeframes
+- View live prices and interactive charts
 
-CoinGecko's current market-chart documentation supports `interval=hourly` for up to the past 100 days and `interval=daily` for daily historical data. The application uses that endpoint and constructs OHLC candles from the returned price series, avoiding dependence on the more restricted hourly/daily OHLC plan options.
+---
 
-## Prediction flow
+## Features
 
-The Predict page sends `{coin_id, interval, horizon}` to `POST /api/predict`. The backend loads cached/fresh candles, engineers features, trains or loads the horizon-specific NumPy model, and returns the predicted price and change.
+- **Live Price Tracking** – Real-time prices for multiple cryptocurrencies via CoinGecko API
+- **Neural Network Predictions** – Forecast prices using a custom NumPy implementation
+- **Multi-Horizon Forecasting** – Predict from 1 hour to 30 days ahead
+- **Interactive Charts** – Visualize price history and predictions
+- **Live Price Table** – See all coins at a glance on the home page
+- **Theme Switcher** – Choose between Dark, Light, Rose, and Amber themes
+- **Responsive Design** – Works on desktop, tablet, and mobile
+- **Backtesting** – Validate model accuracy with walk-forward testing
+- **Prediction History** – Track past predictions and their outcomes
 
-## Files you should inspect
+---
 
-- `app/main.py` — FastAPI routes and API
-- `app/model/network.py` — neural network and scalers
-- `app/services/data.py` — CoinGecko + cache + offline fallback
-- `app/services/features.py` — features and supervised windows
-- `app/services/predictor.py` — model training/loading/prediction
-- `app/templates/` — all website pages
-- `app/static/css/style.css` — themes/design
-- `app/static/js/app.js` — theme switcher and immediate prediction UI
-- `tests/` — validation tests
+## How It Works
 
+1. **Data Collection** – The app fetches historical market data from CoinGecko's API
+2. **Feature Engineering** – Raw price data is transformed into technical indicators
+3. **Model Training** – A neural network is trained on historical data
+4. **Live Prediction** – The model uses the latest live price to make forecasts
+5. **Result Display** – Predictions are anchored to the actual live market price
 
-## Accuracy and backtesting
+---
 
-The live predictor now uses a validation-gated ensemble. The neural network is compared with a simple recent-return baseline on a chronological validation slice. A blend weight is selected from validation data only; the final prediction therefore does not automatically trust the neural network when it is worse than a simpler method.
+## Tech Stack
 
-For research, `POST /api/backtest` performs an expanding-window, leakage-safe test on a held-out historical tail and reports MAE, RMSE, and directional accuracy for both the deployed strategy and the recent-return baseline. See `BACKTESTING.md`.
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Python, FastAPI, Uvicorn |
+| **Frontend** | HTML, CSS, JavaScript |
+| **Machine Learning** | NumPy (from scratch) |
+| **Data Source** | CoinGecko API |
+| **Database** | Local file-based cache (CSV/JSON) |
+| **Deployment** | Railway |
+| **Styling** | Custom CSS |
 
-Do not interpret one backtest as proof of a trading edge. Run multiple coins, intervals, horizons, and historical periods on fresh CoinGecko data before making performance claims.
+---
 
+## Neural Network Architecture
 
-## Local live-price and prediction datasets
+The neural network is implemented **from scratch** using only NumPy, with no external ML libraries.
 
-Runguard deliberately separates historical training data from live prediction inputs.
-The model learns from historical candles in `data/cache/`, while the final monetary
-prediction is anchored to the actual live CoinGecko price captured when the prediction
-is created. Live-price observations are also appended locally so the observation dataset
-grows as the website is used.
+### Structure:
+- **Input Layer**: 12 features (OHLCV, returns, SMA, volatility, etc.)
+- **Hidden Layers**: 32 neurons with ReLU activation
+- **Output Layer**: 1 neuron (predicted price)
 
-Live observations are persisted under `data/cache/live_prices/`:
+### Training:
+- **Optimizer**: Gradient Descent
+- **Loss Function**: Mean Squared Error (MSE)
+- **Validation**: Chronological split (70/15/15)
 
-- `live_prices.jsonl` is the append-only source-of-record for observed market prices.
-- `live_price_history.csv` is a spreadsheet-friendly copy.
+### Ensemble Strategy:
+The model compares its predictions against a **simple recent-return baseline** and selects the better-performing strategy on validation data, ensuring robustness.
 
-Every live prediction is persisted under `data/cache/predictions/`:
+---
 
-- `predictions.jsonl` is the source-of-record ledger.
-- `prediction_history.csv` is a spreadsheet-friendly copy of the same records.
+## Data Pipeline
 
-A record starts as `pending` with the exact live price and live observation timestamp captured at prediction time. Once its horizon has elapsed, Runguard resolves the record against a locally recorded live observation near the target when possible, and only uses historical market-chart data as a recovery fallback when no suitable live observation exists. It stores the actual price, actual direction, absolute error, and directional result. This makes the local history a growing labelled prediction dataset for later evaluation and analysis.
+1. **API Call** – Fetch historical market data from CoinGecko
+2. **Caching** – Store data locally to reduce API calls
+3. **Feature Engineering** – Calculate returns, moving averages, volatility
+4. **Model Training** – Train a horizon-specific model
+5. **Live Anchoring** – Combine historical predictions with live prices
 
-The prediction page polls the saved record while it is open, and the API resolves overdue records on prediction-history requests as well, so leaving the browser closed does not delete or lose the original prediction.
+---
 
-The separate candle cache remains the training/backtesting dataset. The prediction history is the growing labelled outcome dataset and can later be used to evaluate calibration and live performance without changing the historical market-data cache.
+## Backtesting
+
+The backtesting module performs **walk-forward validation** to assess model performance on unseen data.
+
+### Metrics:
+- **MAE** (Mean Absolute Error)
+- **RMSE** (Root Mean Square Error)
+- **Directional Accuracy**
+
+### Results:
+Backtest results are saved to `data/backtests/runguard_backtest.csv` for analysis.
+
+---
+
+## Live Deployment
+
+The application is deployed on **Railway** and accessible publicly.
+
+**Live URL**: `https://web-production-9fd1b.up.railway.app`
+
+---
+
+## Future Improvements
+
+- Add more cryptocurrencies
+- Implement LSTM/GRU architectures
+- Incorporate sentiment analysis
+- Add portfolio management features
+- Integrate real-time WebSocket updates
+
+---
+
+## License
+
+This project is for educational purposes only. Use at your own risk.

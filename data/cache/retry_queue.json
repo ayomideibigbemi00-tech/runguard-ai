@@ -16,148 +16,12 @@
     "updated_at": 1787361929.6605084
   },
   {
-    "coin_id": "hedera-hashgraph",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for hedera-hashgraph/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.6712663,
-    "updated_at": 1787361935.672451
-  },
-  {
-    "coin_id": "kaspa",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko network request failed for kaspa/hourly: <urlopen error [SSL: SSLV3_ALERT_ILLEGAL_PARAMETER] ssl/tls alert illegal parameter (_ssl.c:1082)>",
-    "not_before": 1787361942.4985433,
-    "updated_at": 1787361937.4990766
-  },
-  {
-    "coin_id": "monero",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for monero/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.800786,
-    "updated_at": 1787361939.801899
-  },
-  {
-    "coin_id": "bitcoin",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for bitcoin/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.7894125,
-    "updated_at": 1787361962.791292
-  },
-  {
-    "coin_id": "ethereum",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for ethereum/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5012069,
-    "updated_at": 1787361964.502144
-  },
-  {
-    "coin_id": "tether",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for tether/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5852516,
-    "updated_at": 1787361966.5861635
-  },
-  {
-    "coin_id": "binancecoin",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for binancecoin/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.6329496,
-    "updated_at": 1787361968.63384
-  },
-  {
-    "coin_id": "solana",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for solana/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5415952,
-    "updated_at": 1787361970.5426629
-  },
-  {
-    "coin_id": "usd-coin",
-    "interval": "hourly",
-    "attempt": 1,
-    "reason": "CoinGecko HTTP 429 for usd-coin/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5566623,
-    "updated_at": 1787361972.5576084
-  },
-  {
-    "coin_id": "ripple",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for ripple/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5619454,
-    "updated_at": 1787361974.5633495
-  },
-  {
-    "coin_id": "dogecoin",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for dogecoin/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5479116,
-    "updated_at": 1787361976.5492117
-  },
-  {
-    "coin_id": "cardano",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for cardano/hourly. The job has been persisted for later retry.",
-    "not_before": 1787361981.5953004,
-    "updated_at": 1787361978.596811
-  },
-  {
     "coin_id": "tron",
     "interval": "hourly",
     "attempt": 2,
     "reason": "CoinGecko HTTP 429 for tron/hourly. The job has been persisted for later retry.",
     "not_before": 1787361981.6121807,
     "updated_at": 1787361980.6140213
-  },
-  {
-    "coin_id": "polkadot",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko network request failed for polkadot/hourly: <urlopen error [SSL: RECORD_LAYER_FAILURE] record layer failure (_ssl.c:1082)>",
-    "not_before": 1787361993.8720279,
-    "updated_at": 1787361988.873339
-  },
-  {
-    "coin_id": "bitcoin-cash",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for bitcoin-cash/hourly. The job has been persisted for later retry.",
-    "not_before": 1787362053.7038085,
-    "updated_at": 1787361993.704772
-  },
-  {
-    "coin_id": "litecoin",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for litecoin/hourly. The job has been persisted for later retry.",
-    "not_before": 1787362053.784048,
-    "updated_at": 1787361995.7854242
-  },
-  {
-    "coin_id": "uniswap",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for uniswap/hourly. The job has been persisted for later retry.",
-    "not_before": 1787362053.8313541,
-    "updated_at": 1787361999.8326137
-  },
-  {
-    "coin_id": "stellar",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for stellar/hourly. The job has been persisted for later retry.",
-    "not_before": 1787362053.6391704,
-    "updated_at": 1787362001.6404028
   },
   {
     "coin_id": "internet-computer",
@@ -206,14 +70,6 @@
     "reason": "CoinGecko HTTP 429 for vechain/hourly. The job has been persisted for later retry.",
     "not_before": 1787362053.8163059,
     "updated_at": 1787362013.818307
-  },
-  {
-    "coin_id": "aave",
-    "interval": "hourly",
-    "attempt": 2,
-    "reason": "CoinGecko HTTP 429 for aave/hourly. The job has been persisted for later retry.",
-    "not_before": 1787362053.800693,
-    "updated_at": 1787362015.8020675
   },
   {
     "coin_id": "algorand",
@@ -350,5 +206,165 @@
     "reason": "CoinGecko HTTP 429 for kucoin-shares/hourly. The job has been persisted for later retry.",
     "not_before": 1787362053.7502022,
     "updated_at": 1787362049.751725
+  },
+  {
+    "coin_id": "ripple",
+    "interval": "hourly",
+    "attempt": 6,
+    "reason": "CoinGecko HTTP 429 for ripple/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.5899167,
+    "updated_at": 1787364366.591333
+  },
+  {
+    "coin_id": "solana",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for solana/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.626755,
+    "updated_at": 1787364368.628678
+  },
+  {
+    "coin_id": "solana",
+    "interval": "hourly",
+    "attempt": 5,
+    "reason": "CoinGecko HTTP 429 for solana/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.4897997,
+    "updated_at": 1787364370.4925
+  },
+  {
+    "coin_id": "stellar",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for stellar/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.5517483,
+    "updated_at": 1787364372.5531304
+  },
+  {
+    "coin_id": "stellar",
+    "interval": "hourly",
+    "attempt": 5,
+    "reason": "CoinGecko HTTP 429 for stellar/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.5768895,
+    "updated_at": 1787364374.578414
+  },
+  {
+    "coin_id": "tether",
+    "interval": "daily",
+    "attempt": 3,
+    "reason": "CoinGecko HTTP 429 for tether/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.4982655,
+    "updated_at": 1787364376.4995954
+  },
+  {
+    "coin_id": "tether",
+    "interval": "hourly",
+    "attempt": 6,
+    "reason": "CoinGecko HTTP 429 for tether/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.802913,
+    "updated_at": 1787364378.803922
+  },
+  {
+    "coin_id": "uniswap",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for uniswap/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.8245986,
+    "updated_at": 1787364380.8258855
+  },
+  {
+    "coin_id": "cardano",
+    "interval": "hourly",
+    "attempt": 6,
+    "reason": "CoinGecko HTTP 429 for cardano/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.6978617,
+    "updated_at": 1787364382.6993878
+  },
+  {
+    "coin_id": "chainlink",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for chainlink/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.5163846,
+    "updated_at": 1787364384.5181212
+  },
+  {
+    "coin_id": "chainlink",
+    "interval": "hourly",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for chainlink/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.55348,
+    "updated_at": 1787364386.5548975
+  },
+  {
+    "coin_id": "dogecoin",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for dogecoin/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.5278945,
+    "updated_at": 1787364388.5290887
+  },
+  {
+    "coin_id": "dogecoin",
+    "interval": "hourly",
+    "attempt": 5,
+    "reason": "CoinGecko HTTP 429 for dogecoin/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.548408,
+    "updated_at": 1787364390.5495884
+  },
+  {
+    "coin_id": "ethereum",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for ethereum/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.6367676,
+    "updated_at": 1787364392.6388342
+  },
+  {
+    "coin_id": "ethereum",
+    "interval": "hourly",
+    "attempt": 5,
+    "reason": "CoinGecko HTTP 429 for ethereum/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.5963156,
+    "updated_at": 1787364394.5969605
+  },
+  {
+    "coin_id": "hedera-hashgraph",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for hedera-hashgraph/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.4926126,
+    "updated_at": 1787364396.4938793
+  },
+  {
+    "coin_id": "hedera-hashgraph",
+    "interval": "hourly",
+    "attempt": 5,
+    "reason": "CoinGecko HTTP 429 for hedera-hashgraph/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.5626628,
+    "updated_at": 1787364398.5646143
+  },
+  {
+    "coin_id": "kaspa",
+    "interval": "daily",
+    "attempt": 3,
+    "reason": "CoinGecko HTTP 429 for kaspa/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.5636585,
+    "updated_at": 1787364400.5663252
+  },
+  {
+    "coin_id": "kaspa",
+    "interval": "hourly",
+    "attempt": 5,
+    "reason": "CoinGecko HTTP 429 for kaspa/hourly. The job has been persisted for later retry.",
+    "not_before": 1787364426.6555176,
+    "updated_at": 1787364402.6567526
+  },
+  {
+    "coin_id": "litecoin",
+    "interval": "daily",
+    "attempt": 4,
+    "reason": "CoinGecko HTTP 429 for litecoin/daily. The job has been persisted for later retry.",
+    "not_before": 1787364426.5356958,
+    "updated_at": 1787364404.5376122
   }
 ]
