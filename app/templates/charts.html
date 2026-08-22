@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Runguard AI · Charts{% endblock %}
+{% block content %}
+<section class="page container">
+  <p class="eyebrow">LIVE CHARTS</p>
+  <h1>Coin Price Charts</h1>
+  <p class="lead">Select a coin to view its live price chart.</p>
+  
+  <div class="chart-controls">
+    <label for="chart-coin">Choose coin:</label>
+    <select id="chart-coin">
+      {% for coin in coins %}
+      <option value="{{ coin.id }}">{{ coin.name }} ({{ coin.symbol }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  
+  <div class="chart-container">
+    <canvas id="price-chart"></canvas>
+    <p id="chart-status" class="muted">Loading chart...</p>
+  </div>
+</section>
+{% endblock %}

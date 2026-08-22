@@ -17,7 +17,8 @@ from app.services.data import cache_info, get_retry_queue, ingest_jobs
 
 def flatten(result: dict) -> dict:
     row = {k: v for k, v in result.items() if k != 'metrics'}
-    row.update(result['metrics'])
+    if 'metrics' in result and isinstance(result['metrics'], dict):
+        row.update(result['metrics'])
     return row
 
 
@@ -59,7 +60,15 @@ def main() -> int:
     print('CoinGecko data is ingested once into the local cache; the backtester reads local data.')
     print(f'Output: {out}')
 
-    ingestion = ingest_jobs(jobs, force_refresh=args.force_refresh, max_passes=args.max_ingest_passes)
+    # Perform ingestion with up to 3 retry passes for network resilience
+    ingestion = None
+    for attempt in range(3):
+        ingestion = ingest_jobs(jobs, force_refresh=args.force_refresh, max_passes=args.max_ingest_passes)
+        if not ingestion['pending_retry_queue']:
+            break
+        print(f'Retrying ingestion pass {attempt + 1}...')
+        time.sleep(5)  # wait a bit before retrying
+
     pending_keys = {(q['coin_id'], q['interval']) for q in ingestion['pending_retry_queue']}
     print(f"Ingestion complete: {len(ingestion['completed'])}/{len(jobs)} jobs cached")
     if pending_keys:
@@ -67,8 +76,6 @@ def main() -> int:
         for q in ingestion['pending_retry_queue']:
             print(f"  {q['coin_id']} {q['interval']} retry_after={q['not_before']:.0f} reason={q['reason']}")
 
-    # Only backtest jobs with a successful real cache. This prevents a 429 or
-    # network outage from being silently converted into a synthetic or incomplete result.
     rows = []
     failures = list(ingestion['failures_observed'])
     for coin_id in selected:
@@ -91,7 +98,11 @@ def main() -> int:
                         require_real_data=True,
                     )
                     rows.append(flatten(result))
-                    print(f"  strategy={result['strategy']} MAE={result['metrics']['mae_pct']:.4f}% vs baseline={result['metrics']['baseline_mae_pct']:.4f}%")
+                    strategy = result.get('strategy', 'N/A')
+                    metrics = result.get('metrics', {})
+                    mae = metrics.get('mae_pct', 'N/A')
+                    baseline = metrics.get('baseline_mae_pct', 'N/A')
+                    print(f"  strategy={strategy} MAE={mae}% vs baseline={baseline}%")
                 except Exception as exc:
                     failures.append({'coin_id': coin_id, 'interval': interval, 'horizon': horizon, 'stage': 'backtest', 'error': str(exc)})
                     print(f'  FAILED: {exc}')

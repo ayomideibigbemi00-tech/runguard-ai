@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from config import COIN_MAP, COINS, HORIZONS, FEATURES, WINDOW_SIZE
 from app.services.predictor import predict
-from app.services.data import load_candles, retry_queue_status, normalize_coin_id, _fetch_market_chart, fetch_current_prices
+from app.services.data import load_candles, retry_queue_status, normalize_coin_id, fetch_current_prices
 from app.services.predictions import list_predictions, prediction_summary, resolve_due_predictions
 from app.services.backtest import walk_forward_backtest
 
@@ -36,9 +36,9 @@ def home(request: Request):
     return templates.TemplateResponse(request=request, name='index.html', context={**base_context(request), 'page': 'home'})
 
 
-@app.get('/model', response_class=HTMLResponse)
-def model_page(request: Request):
-    return templates.TemplateResponse(request=request, name='model.html', context={**base_context(request), 'page': 'model', 'features': FEATURES, 'window_size': WINDOW_SIZE})
+@app.get('/charts', response_class=HTMLResponse)
+def charts_page(request: Request):
+    return templates.TemplateResponse(request=request, name='charts.html', context={**base_context(request), 'page': 'charts'})
 
 
 @app.get('/predict', response_class=HTMLResponse)
@@ -147,18 +147,36 @@ def api_data_queue():
 
 
 @app.get('/api/prices')
-def api_prices():
+def api_prices(coin: str | None = None):
     try:
         prices = fetch_current_prices()
+        if coin:
+            coin = normalize_coin_id(coin)
+            if coin in prices:
+                return {'prices': {coin: prices[coin]}, 'count': 1}
+            else:
+                return {'prices': {}, 'count': 0}
         return {'prices': prices, 'count': len(prices)}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
+@app.get('/api/chart/{coin_id}')
+def api_chart(coin_id: str):
+    try:
+        coin_id = normalize_coin_id(coin_id)
+        df, fallback = load_candles(coin_id, 'hourly', force_refresh=False, allow_fallback=True)
+        df = df.tail(100)
+        labels = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M').tolist()
+        prices = df['close'].tolist()
+        return {'labels': labels, 'prices': prices, 'coin_id': coin_id, 'source': 'synthetic' if fallback else 'coingecko'}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @app.get('/api/status')
 def api_status():
     status = {}
-    # Status samples the default Bitcoin option only, keeping this endpoint cheap.
     for interval in ('hourly', 'daily'):
         try:
             df, fallback = load_candles('bitcoin', interval)

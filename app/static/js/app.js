@@ -1,18 +1,20 @@
-// Theme switcher - runs immediately
-(() => {
+// Theme switcher (dropdown)
+(function() {
+  const themeSelect = document.getElementById('theme-select');
   const root = document.documentElement;
-  root.dataset.theme = localStorage.getItem('runguard-theme') || 'dark';
-  document.querySelectorAll('[data-theme-choice]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.dataset.theme = btn.dataset.themeChoice;
-      localStorage.setItem('runguard-theme', btn.dataset.themeChoice);
-    });
+  
+  const savedTheme = localStorage.getItem('runguard-theme') || 'dark';
+  root.dataset.theme = savedTheme;
+  themeSelect.value = savedTheme;
+  
+  themeSelect.addEventListener('change', function() {
+    root.dataset.theme = this.value;
+    localStorage.setItem('runguard-theme', this.value);
   });
 })();
 
-// Everything else waits for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
-  // Form handling
+// Prediction form logic
+document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('#predict-form');
   const horizonSelect = document.querySelector('#horizon');
   const intervalInput = document.querySelector('#interval');
@@ -49,63 +51,99 @@ document.addEventListener('DOMContentLoaded', () => {
       if (predictBtn) { predictBtn.disabled = true; predictBtn.textContent = 'Predicting…'; }
     });
   }
+});
 
-  // Live prices
+// Live price for selected coin only
+document.addEventListener('DOMContentLoaded', function() {
   const coinSelect = document.querySelector('#coin');
   const livePrice = document.querySelector('#current-price');
-  let currentPrices = {};
+  if (!coinSelect || !livePrice) return;
   
-  async function loadLivePrices() {
-    if (!coinSelect || !livePrice) return;
+  async function fetchLivePrice() {
+    const coinId = coinSelect.value;
     try {
-      // CRITICAL: Added a timeout so the UI doesn't hang forever
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
-      const response = await fetch('/api/prices', { signal: controller.signal });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) throw new Error('Live price service unavailable');
-      const body = await response.json();
-      currentPrices = body.prices || {};
-      
-      [...coinSelect.options].forEach(option => {
-        const base = option.textContent.replace(/\s+•\s+\$[\d,\.]+$/, '');
-        const info = currentPrices[option.value];
-        option.textContent = info ? `${base} • $${Number(info.price).toLocaleString(undefined, {maximumFractionDigits: 8})}` : base;
-      });
-      
-      updateSelectedPrice();
+      const response = await fetch(`/api/prices?coin=${coinId}`);
+      if (!response.ok) throw new Error('Failed to fetch price');
+      const data = await response.json();
+      const info = data.prices[coinId];
+      if (info) {
+        livePrice.textContent = `Live price: $${Number(info.price).toLocaleString(undefined, { maximumFractionDigits: 8 })}`;
+      }
     } catch (error) {
-      // Don't show "Live price unavailable" immediately - try again in 5s
-      console.error('Failed to load live prices:', error);
-      setTimeout(loadLivePrices, 5000);
+      livePrice.textContent = 'Live price unavailable';
     }
   }
   
-  function formatObservedTime(value) {
-    if (!value) return 'time unavailable';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'time unavailable';
-    return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-  }
-  
-  function updateSelectedPrice() {
-    if (!coinSelect || !livePrice) return;
-    const info = currentPrices[coinSelect.value];
-    livePrice.textContent = info
-      ? `Live price: $${Number(info.price).toLocaleString(undefined, {maximumFractionDigits: 8})} · updated ${formatObservedTime(info.observed_at_utc)}`
-      : 'Live price unavailable';
-  }
-  
-  coinSelect?.addEventListener('change', updateSelectedPrice);
-  
-  // Load prices on page load
-  loadLivePrices();
-  
-  // Refresh every 60 seconds
-  window.setInterval(loadLivePrices, 60000);
+  coinSelect.addEventListener('change', fetchLivePrice);
+  fetchLivePrice();
+  setInterval(fetchLivePrice, 60000);
+});
 
-  // Prediction result refresh
+// Charts page
+document.addEventListener('DOMContentLoaded', function() {
+  const canvas = document.getElementById('price-chart');
+  const coinSelect = document.getElementById('chart-coin');
+  const status = document.getElementById('chart-status');
+  if (!canvas || !coinSelect) return;
+  
+  async function fetchChartData(coinId) {
+    status.textContent = 'Loading chart...';
+    try {
+      const response = await fetch(`/api/chart/${coinId}`);
+      if (!response.ok) throw new Error('Failed to fetch chart data');
+      const data = await response.json();
+      renderChart(data);
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = 'Unable to load chart. Please try again.';
+    }
+  }
+  
+  function renderChart(data) {
+    const prices = data.prices || [];
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.parentElement.clientWidth - 40;
+    canvas.height = 400;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--panel') || '#161b22';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const range = maxPrice - minPrice || 1;
+    
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      const y = (canvas.height / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    prices.forEach((price, i) => {
+      const x = (i / (prices.length - 1)) * canvas.width;
+      const y = canvas.height - ((price - minPrice) / range) * canvas.height;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+  
+  coinSelect.addEventListener('change', function() {
+    fetchChartData(this.value);
+  });
+  
+  fetchChartData(coinSelect.value);
+});
+
+// Prediction result refresh
+document.addEventListener('DOMContentLoaded', function() {
   const resultPanel = document.querySelector('#result[data-prediction-id]');
   async function refreshPredictionResult() {
     if (!resultPanel) return;
@@ -123,13 +161,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (actual) actual.textContent = `$${Number(prediction.actual_price).toLocaleString(undefined, {maximumFractionDigits: 8})}`;
         if (result) result.textContent = prediction.direction_correct ? 'CORRECT ✓' : 'WRONG ✗';
       }
-    } catch (_) {
-      // Keep existing result
-    }
+    } catch (_) {}
   }
   
   if (resultPanel) {
     refreshPredictionResult();
-    window.setInterval(refreshPredictionResult, 30000);
+    setInterval(refreshPredictionResult, 30000);
   }
 });

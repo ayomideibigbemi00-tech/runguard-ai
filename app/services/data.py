@@ -27,9 +27,12 @@ from config import (
 )
 from app.services.live_prices import record_price_snapshot
 
-# CoinGecko's current Public API guidance varies by conditions and documents
-# 5-15 requests/minute for the public API. We therefore default conservatively
-# to 10 RPM unless the user explicitly configures a higher plan limit.
+# In-memory cache for live prices
+_LIVE_PRICE_CACHE = {}
+_LIVE_PRICE_CACHE_LOCK = threading.Lock()
+_LIVE_PRICE_CACHE_TIMESTAMP = 0
+_LIVE_PRICE_CACHE_TTL = 60  # seconds
+
 DEFAULT_REQUESTS_PER_MINUTE = 30
 REQUESTS_PER_MINUTE = max(
     1,
@@ -48,7 +51,6 @@ _REQUEST_TIMESTAMPS: deque[float] = deque()
 
 class RateLimitError(RuntimeError):
     """Raised when CoinGecko continues to reject a request after safe retries."""
-
     def __init__(self, message: str, *, retry_after: float | None = None):
         super().__init__(message)
         self.retry_after = retry_after
@@ -63,8 +65,6 @@ class PermanentCoinGeckoError(RuntimeError):
 
 
 COIN_ALIASES = {
-    # CoinGecko's public page slug is /xrp, but its API coin ID is 'ripple'.
-    # Keep 'xrp' accepted so existing saved forms/API calls remain compatible.
     'xrp': 'ripple',
 }
 
@@ -117,8 +117,6 @@ def _load_rate_state() -> list[float]:
 
 
 def _save_rate_state(values: list[float]) -> None:
-    # Persisting timestamps protects a restarted process from immediately
-    # bursting after a large run. Old entries are pruned aggressively.
     cutoff = time.time() - 60.0
     _write_json(RATE_STATE_PATH, [ts for ts in values if ts > cutoff])
 
@@ -149,8 +147,6 @@ def _rate_limit_wait(extra_delay: float = 0.0) -> None:
             wait_for = max(spacing_wait, window_wait, extra_delay)
             if wait_for <= 0:
                 break
-            # Keep the lock while sleeping so two in-process callers cannot
-            # both observe an available slot and burst together.
             time.sleep(wait_for)
 
         timestamp = time.time()
@@ -192,7 +188,6 @@ def enqueue_retry(
     attempt: int,
     not_before: float | None = None,
 ) -> dict:
-    """Persist a retryable coin/interval job so it survives process restarts."""
     item = {
         'coin_id': coin_id,
         'interval': interval,
@@ -226,13 +221,6 @@ def retry_queue_status() -> dict:
 
 
 def _fetch_market_chart(coin_id: str, interval: str, days: int) -> pd.DataFrame:
-    """Fetch one CoinGecko request.
-
-    IMPORTANT: this function intentionally performs exactly one HTTP attempt.
-    Retryable failures are handed to the persistent ingestion queue so a 429
-    cannot block the entire batch inside a long sleep. Every subsequent retry
-    must pass through the global rate limiter again.
-    """
     coin_id = normalize_coin_id(coin_id)
     api_interval = 'hourly' if interval == 'hourly' else 'daily'
     params = {'vs_currency': VS_CURRENCY, 'days': str(days), 'interval': api_interval}
@@ -324,7 +312,6 @@ def cache_info(coin_id: str, interval: str) -> dict:
 
 
 def _synthetic(coin_id: str, interval: str, rows: int = 1500) -> pd.DataFrame:
-    """Development-only deterministic fallback. Never use for real audits."""
     seed = int(hashlib.sha256(f'{coin_id}:{interval}'.encode()).hexdigest()[:8], 16)
     rng = np.random.default_rng(seed)
     step = pd.Timedelta(hours=1 if interval == 'hourly' else 24)
@@ -365,14 +352,10 @@ def load_candles(
         remove_retry(coin_id, interval)
         return df, False
     except (RateLimitError, RetryableCoinGeckoError) as exc:
-        # Persist the failure so the batch runner can revisit it rather than
-        # silently dropping the coin. Use the error's suggested Retry-After when available.
         not_before = time.time() + (exc.retry_after or RETRY_MAX_SECONDS if isinstance(exc, RateLimitError) else RETRY_BASE_SECONDS)
         attempt = int(next((q.get('attempt', 0) for q in _load_retry_queue() if _queue_key(q['coin_id'], q['interval']) == _queue_key(coin_id, interval)), 0)) + 1
         enqueue_retry(coin_id, interval, reason=str(exc), attempt=attempt, not_before=not_before)
         if path.exists() and allow_fallback:
-            # This is still real historical CoinGecko data, just stale. It is
-            # acceptable for ordinary website use but not for a strict fresh-data audit.
             return _read_cache(coin_id, interval), False
         raise
     except PermanentCoinGeckoError:
@@ -393,13 +376,7 @@ def ingest_jobs(
     force_refresh: bool = False,
     max_passes: int = 10,
 ) -> dict:
-    """Process coin/interval jobs until they succeed or are left in a persistent retry queue.
-
-    Successful jobs are cached immediately. Retryable failures are requeued and revisited
-    after their not-before timestamp. No synthetic data is ever produced by this function.
-    """
     pending = {(coin_id, interval) for coin_id, interval in jobs}
-    # Include any persistent jobs from a previous interrupted run.
     pending.update((_q['coin_id'], _q['interval']) for _q in get_retry_queue())
     completed = []
     failures = []
@@ -422,12 +399,8 @@ def ingest_jobs(
                 progress = True
             except Exception as exc:
                 failures.append({'coin_id': coin_id, 'interval': interval, 'error': str(exc)})
-                # load_candles has persisted retryable failures. Permanent failures
-                # are left in the current pass but not retried forever.
 
         if pending and not progress:
-            # Wait only until the earliest retry becomes eligible, capped so the
-            # process can continue to inspect external state and not hang blindly.
             queue = get_retry_queue()
             eligible_times = [float(q['not_before']) for q in queue if (q['coin_id'], q['interval']) in pending]
             if eligible_times:
@@ -447,7 +420,15 @@ def ingest_jobs(
 
 
 def fetch_current_prices() -> dict[str, dict]:
-    """Fetch current prices for the full configured coin catalogue in one request."""
+    """Fetch current prices with in-memory caching."""
+    global _LIVE_PRICE_CACHE, _LIVE_PRICE_CACHE_TIMESTAMP
+    
+    # Check if cache is fresh
+    now = time.time()
+    with _LIVE_PRICE_CACHE_LOCK:
+        if _LIVE_PRICE_CACHE and (now - _LIVE_PRICE_CACHE_TIMESTAMP) < _LIVE_PRICE_CACHE_TTL:
+            return _LIVE_PRICE_CACHE
+    
     from config import COINS
 
     ids = [normalize_coin_id(coin['id']) for coin in COINS]
@@ -490,12 +471,14 @@ def fetch_current_prices() -> dict[str, dict]:
             'last_updated_at': values.get('last_updated_at'),
             'observed_at_utc': observed_at.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z'),
         }
-    # A live-price request is also a local market observation. The write is
-    # intentionally outside the HTTP parsing loop so one snapshot has one
-    # common observation time for all 50 configured coins.
+    
+    # Store in cache
+    with _LIVE_PRICE_CACHE_LOCK:
+        _LIVE_PRICE_CACHE = output
+        _LIVE_PRICE_CACHE_TIMESTAMP = time.time()
+    
     try:
         record_price_snapshot(output, observed_at=observed_at)
     except OSError:
-        # The live API result remains usable even if the local disk is temporarily unavailable.
         pass
     return output

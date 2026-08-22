@@ -17,12 +17,18 @@
     </a>
     <div class="nav-links">
       <a class="{% if page == 'home' %}active{% endif %}" href="/">Home</a>
-      <a class="{% if page == 'model' %}active{% endif %}" href="/model">Model</a>
+      <a class="{% if page == 'charts' %}active{% endif %}" href="/charts">Charts</a>
       <a class="{% if page == 'predict' %}active{% endif %}" href="/predict">Predict</a>
       <a class="{% if page == 'about' %}active{% endif %}" href="/about">About</a>
     </div>
-    <div class="theme-picker" aria-label="Choose theme">
-      <button data-theme-choice="light">☀️</button><button data-theme-choice="dark">🌙</button><button data-theme-choice="rose">🌹</button><button data-theme-choice="amber">🟡</button>
+    <div class="theme-picker">
+      <label for="theme-select">Theme:</label>
+      <select id="theme-select" class="theme-select">
+        <option value="dark" {% if theme == 'dark' %}selected{% endif %}>Dark</option>
+        <option value="light" {% if theme == 'light' %}selected{% endif %}>Light</option>
+        <option value="rose" {% if theme == 'rose' %}selected{% endif %}>Rose</option>
+        <option value="amber" {% if theme == 'amber' %}selected{% endif %}>Amber</option>
+      </select>
     </div>
   </nav>
 </header>
