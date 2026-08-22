@@ -11,7 +11,42 @@
   });
 })();
 
-// Top Movers (Home page)
+// Live Prices Table (Market page)
+document.addEventListener('DOMContentLoaded', function() {
+  const tableBody = document.getElementById('price-table-body');
+  if (!tableBody) return;
+  
+  async function updatePrices() {
+    try {
+      const response = await fetch('/api/prices');
+      if (!response.ok) throw new Error('Failed to fetch prices');
+      const data = await response.json();
+      const prices = data.prices || {};
+      
+      let html = '';
+      for (const [coinId, info] of Object.entries(prices)) {
+        const price = Number(info.price).toLocaleString(undefined, { maximumFractionDigits: 8 });
+        const change = info.price_change_percentage_24h;
+        const changeDisplay = change !== undefined ? Number(change).toFixed(2) + '%' : 'N/A';
+        const changeClass = change >= 0 ? 'positive' : 'negative';
+        html += `<tr>
+          <td>${info.name}</td>
+          <td>${info.symbol}</td>
+          <td>$${price}</td>
+          <td class="${changeClass}">${changeDisplay}</td>
+        </tr>`;
+      }
+      tableBody.innerHTML = html;
+    } catch (error) {
+      console.error('Error updating prices:', error);
+    }
+  }
+  
+  updatePrices();
+  setInterval(updatePrices, 60000);
+});
+
+// Top Movers (Market page)
 document.addEventListener('DOMContentLoaded', function() {
   const gainersList = document.getElementById('gainers-list');
   const losersList = document.getElementById('losers-list');
@@ -25,18 +60,26 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (data.gainers && data.gainers.length > 0) {
         gainersList.innerHTML = data.gainers.map(coin => `
-          <tr><td>${coin.name} (${coin.symbol})</td><td class="positive">$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td></tr>
+          <tr>
+            <td>${coin.name} (${coin.symbol})</td>
+            <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
+            <td class="positive">+${Number(coin.price_change_percentage_24h).toFixed(2)}%</td>
+          </tr>
         `).join('');
       }
       
       if (data.losers && data.losers.length > 0) {
         losersList.innerHTML = data.losers.map(coin => `
-          <tr><td>${coin.name} (${coin.symbol})</td><td class="negative">$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td></tr>
+          <tr>
+            <td>${coin.name} (${coin.symbol})</td>
+            <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
+            <td class="negative">${Number(coin.price_change_percentage_24h).toFixed(2)}%</td>
+          </tr>
         `).join('');
       }
     } catch (error) {
-      gainersList.innerHTML = '<tr><td colspan="2">Unable to load</td></tr>';
-      losersList.innerHTML = '<tr><td colspan="2">Unable to load</td></tr>';
+      gainersList.innerHTML = '<tr><td colspan="3">Unable to load</td></tr>';
+      losersList.innerHTML = '<tr><td colspan="3">Unable to load</td></tr>';
     }
   }
   fetchMovers();

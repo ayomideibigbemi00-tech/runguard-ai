@@ -34,10 +34,7 @@ _LIVE_PRICE_CACHE_TIMESTAMP = 0
 _LIVE_PRICE_CACHE_TTL = 60  # seconds
 
 DEFAULT_REQUESTS_PER_MINUTE = 30
-REQUESTS_PER_MINUTE = max(
-    1,
-    int(os.getenv('COINGECKO_REQUESTS_PER_MINUTE', str(DEFAULT_REQUESTS_PER_MINUTE))),
-)
+REQUESTS_PER_MINUTE = max(1, int(os.getenv('COINGECKO_REQUESTS_PER_MINUTE', str(DEFAULT_REQUESTS_PER_MINUTE))))
 REQUEST_SPACING_SECONDS = 60.0 / REQUESTS_PER_MINUTE
 MAX_RETRIES = max(0, int(os.getenv('COINGECKO_MAX_RETRIES', '6')))
 RETRY_BASE_SECONDS = max(1.0, float(os.getenv('COINGECKO_RETRY_BASE_SECONDS', '5')))
@@ -51,6 +48,7 @@ _REQUEST_TIMESTAMPS: deque[float] = deque()
 
 class RateLimitError(RuntimeError):
     """Raised when CoinGecko continues to reject a request after safe retries."""
+
     def __init__(self, message: str, *, retry_after: float | None = None):
         super().__init__(message)
         self.retry_after = retry_after
@@ -238,9 +236,7 @@ def _fetch_market_chart(coin_id: str, interval: str, days: int) -> pd.DataFrame:
         retry_after = _retry_after_seconds(exc)
         retryable = exc.code in {408, 425, 429, 500, 502, 503, 504}
         if not retryable:
-            raise PermanentCoinGeckoError(
-                f'CoinGecko HTTP {exc.code} for {coin_id}/{interval}.'
-            ) from exc
+            raise PermanentCoinGeckoError(f'CoinGecko HTTP {exc.code} for {coin_id}/{interval}.') from exc
         if exc.code == 429:
             raise RateLimitError(
                 f'CoinGecko HTTP 429 for {coin_id}/{interval}. '
@@ -420,15 +416,14 @@ def ingest_jobs(
 
 
 def fetch_current_prices() -> dict[str, dict]:
-    """Fetch current prices with in-memory caching."""
+    """Fetch current prices with 24h change and in-memory caching."""
     global _LIVE_PRICE_CACHE, _LIVE_PRICE_CACHE_TIMESTAMP
-    
-    # Check if cache is fresh
+
     now = time.time()
     with _LIVE_PRICE_CACHE_LOCK:
         if _LIVE_PRICE_CACHE and (now - _LIVE_PRICE_CACHE_TIMESTAMP) < _LIVE_PRICE_CACHE_TTL:
             return _LIVE_PRICE_CACHE
-    
+
     from config import COINS
 
     ids = [normalize_coin_id(coin['id']) for coin in COINS]
@@ -436,6 +431,7 @@ def fetch_current_prices() -> dict[str, dict]:
         'ids': ','.join(ids),
         'vs_currencies': VS_CURRENCY,
         'include_last_updated_at': 'true',
+        'include_24hr_change': 'true',
     }
     url = f'{COINGECKO_BASE_URL}/simple/price?{urlencode(params)}'
     headers = {'User-Agent': 'Runguard-AI/4.1'}
@@ -470,13 +466,13 @@ def fetch_current_prices() -> dict[str, dict]:
             'price': float(values[VS_CURRENCY]),
             'last_updated_at': values.get('last_updated_at'),
             'observed_at_utc': observed_at.astimezone(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            'price_change_percentage_24h': values.get('usd_24h_change', 0.0),
         }
-    
-    # Store in cache
+
     with _LIVE_PRICE_CACHE_LOCK:
         _LIVE_PRICE_CACHE = output
         _LIVE_PRICE_CACHE_TIMESTAMP = time.time()
-    
+
     try:
         record_price_snapshot(output, observed_at=observed_at)
     except OSError:

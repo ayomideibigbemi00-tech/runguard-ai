@@ -5,9 +5,9 @@
   --panel-hover: rgba(255, 255, 255, 0.08);
   --text: #ffffff;
   --text-secondary: #a0a0c0;
-  --accent: #7c3aed; /* Neon Purple */
-  --accent-2: #06b6d4; /* Neon Cyan */
-  --accent-3: #db2777; /* Neon Magenta */
+  --accent: #7c3aed;
+  --accent-2: #06b6d4;
+  --accent-3: #db2777;
   --border: rgba(255, 255, 255, 0.1);
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.4);
@@ -15,6 +15,11 @@
   --radius-lg: 24px;
   --radius-sm: 10px;
   --transition: all 0.3s ease;
+  
+  /* Logo Colors */
+  --neon-blue: #2563eb;
+  --neon-cyan: #00d4ff;
+  --neon-pink: #ff00ff;
 }
 
 html[data-theme="light"] {
@@ -68,6 +73,57 @@ body {
 
 h1, h2, h3, .brand-logo { font-family: 'Space Grotesk', sans-serif; }
 
+/* ===== LOGO STYLES ===== */
+.brand {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.brand-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.85;
+  position: relative;
+}
+
+.brand-logo::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.6), transparent 70%);
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.logo-main {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--neon-blue);
+  text-shadow:
+    2px 2px 0 var(--neon-cyan),
+    -2px -2px 0 var(--neon-pink);
+}
+
+.logo-sub {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.4em;
+  color: var(--neon-blue);
+  text-shadow:
+    2px 2px 0 var(--neon-cyan),
+    -2px -2px 0 var(--neon-pink);
+  margin-top: 2px;
+}
+
 /* ===== NAVBAR ===== */
 .nav-wrap {
   position: sticky; top: 0; z-index: 100;
@@ -80,15 +136,6 @@ h1, h2, h3, .brand-logo { font-family: 'Space Grotesk', sans-serif; }
   max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 80px;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
 }
-
-.brand { text-decoration: none; }
-.brand-logo { display: flex; flex-direction: column; line-height: 0.85; }
-.logo-main {
-  font-size: 28px; font-weight: 700; letter-spacing: 0.05em;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.logo-sub { font-size: 12px; font-weight: 600; letter-spacing: 0.4em; color: var(--text-secondary); margin-top: 2px; }
 
 .nav-links { display: flex; gap: 8px; }
 .nav-links a {
@@ -105,7 +152,7 @@ h1, h2, h3, .brand-logo { font-family: 'Space Grotesk', sans-serif; }
   background: var(--panel); color: var(--text); cursor: pointer;
 }
 
-/* ===== HERO (The main "Metaverse" look) ===== */
+/* ===== HERO ===== */
 .hero {
   position: relative; overflow: hidden;
   padding: 160px 0 120px;
@@ -161,6 +208,20 @@ h1, h2, h3, .brand-logo { font-family: 'Space Grotesk', sans-serif; }
 }
 .panel { padding: 32px; }
 
+/* ===== LIVE PRICES TABLE ===== */
+.live-prices { padding: 80px 0; max-width: 1200px; margin: 0 auto; }
+.live-prices h2 { font-size: 36px; margin-bottom: 8px; }
+.table-wrapper {
+  margin-top: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;
+  background: var(--panel); backdrop-filter: blur(12px); box-shadow: var(--shadow);
+}
+.price-table { width: 100%; border-collapse: collapse; }
+.price-table th { background: var(--bg-secondary); padding: 16px; text-align: left; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+.price-table td { padding: 20px; border-bottom: 1px solid var(--border); font-size: 16px; }
+.price-table tr:hover { background: var(--panel-hover); }
+.positive { color: #10b981; font-weight: 600; }
+.negative { color: #ef4444; font-weight: 600; }
+
 /* ===== TOP MOVERS ===== */
 .movers { padding: 80px 0; max-width: 1200px; margin: 0 auto; }
 .movers h2 { font-size: 36px; margin-bottom: 40px; text-align: center; }
@@ -183,19 +244,6 @@ h1, h2, h3, .brand-logo { font-family: 'Space Grotesk', sans-serif; }
 }
 article h3 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 article p { color: var(--text-secondary); font-size: 16px; }
-
-/* ===== LIVE PRICES ===== */
-.live-prices { padding: 80px 0; max-width: 1200px; margin: 0 auto; }
-.table-wrapper {
-  margin-top: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden;
-  background: var(--panel); backdrop-filter: blur(12px); box-shadow: var(--shadow);
-}
-.price-table { width: 100%; border-collapse: collapse; }
-.price-table th { background: var(--bg-secondary); padding: 16px; text-align: left; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
-.price-table td { padding: 20px; border-bottom: 1px solid var(--border); font-size: 16px; }
-.price-table tr:hover { background: var(--panel-hover); }
-.positive { color: #10b981; font-weight: 600; }
-.negative { color: #ef4444; font-weight: 600; }
 
 /* ===== PREDICT PAGE ===== */
 .page { max-width: 1200px; margin: 0 auto; padding: 80px 24px; }
@@ -221,6 +269,57 @@ article p { color: var(--text-secondary); font-size: 16px; }
   height: 500px; position: relative;
 }
 
+/* ===== ABOUT PAGE ===== */
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.about-card {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.about-card .icon {
+  margin-bottom: 16px;
+}
+
+.about-card h3 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.about-card p {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feature-list li {
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+}
+
+.feature-list li strong {
+  color: var(--accent-2);
+}
+
 /* ===== FOOTER ===== */
 .footer { padding: 40px; text-align: center; color: var(--text-secondary); border-top: 1px solid var(--border); }
 
@@ -232,4 +331,5 @@ article p { color: var(--text-secondary); font-size: 16px; }
   .actions { flex-direction: column; align-items: center; }
   .grid.three, .grid.two, .predict-layout { grid-template-columns: 1fr; }
   .movers .grid.two { grid-template-columns: 1fr; }
+  .about-grid { grid-template-columns: 1fr; }
 }

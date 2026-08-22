@@ -36,6 +36,11 @@ def home(request: Request):
     return templates.TemplateResponse(request=request, name='index.html', context={**base_context(request), 'page': 'home'})
 
 
+@app.get('/market', response_class=HTMLResponse)
+def market_page(request: Request):
+    return templates.TemplateResponse(request=request, name='market.html', context={**base_context(request), 'page': 'market'})
+
+
 @app.get('/charts', response_class=HTMLResponse)
 def charts_page(request: Request):
     return templates.TemplateResponse(request=request, name='charts.html', context={**base_context(request), 'page': 'charts'})
@@ -176,27 +181,22 @@ def api_chart(coin_id: str):
 
 @app.get('/api/movers')
 def api_movers():
-    """Get top gainers and losers in the last 24 hours."""
+    """Get top 5 gainers and losers based on 24h change."""
     try:
         prices = fetch_current_prices()
         if not prices:
             return {'gainers': [], 'losers': []}
         
-        # Sort by price change (we'll use the price as proxy since we don't have 24h change yet)
-        # In a real implementation, we'd fetch 24h change from the API
         coin_list = list(prices.values())
+        sorted_by_change = sorted(coin_list, key=lambda x: x.get('price_change_percentage_24h', 0), reverse=True)
+        gainers = sorted_by_change[:5]
+        losers = sorted_by_change[-5:]
         
-        # Sort by price (highest first for gainers, lowest for losers)
-        # For now, just return top 5 by price
-        sorted_coins = sorted(coin_list, key=lambda x: x['price'], reverse=True)
+        id_map = {v['symbol']: k for k, v in prices.items()}
+        gainers = [{**coin, 'id': id_map.get(coin['symbol'], '')} for coin in gainers]
+        losers = [{**coin, 'id': id_map.get(coin['symbol'], '')} for coin in losers]
         
-        gainers = sorted_coins[:5]
-        losers = sorted_coins[-5:]
-        
-        return {
-            'gainers': [{'id': k, **v} for k, v in prices.items() if v['price'] >= sorted_coins[0]['price']][:5],
-            'losers': [{'id': k, **v} for k, v in prices.items() if v['price'] <= sorted_coins[-1]['price']][:5]
-        }
+        return {'gainers': gainers, 'losers': losers}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

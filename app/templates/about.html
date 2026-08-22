@@ -1,49 +1,49 @@
 {% extends 'base.html' %}
 {% block title %}Runguard AI · About{% endblock %}
 {% block content %}
-<section class="page container">
-  <p class="eyebrow">ABOUT</p>
+<section class="page">
+  <p class="eyebrow">About</p>
   <h1>How Runguard AI Works</h1>
   <p class="lead">A deep dive into the neural network, data pipeline, and prediction engine.</p>
 
-  <div class="grid two" style="margin-top: 40px;">
-    <article>
+  <div class="about-grid">
+    <div class="panel about-card">
       <div class="icon">🧠</div>
       <h3>Neural Network</h3>
-      <p>Our model is a feedforward neural network built from scratch with NumPy. It uses 12 technical features including OHLCV data, returns, moving averages, and volatility to make predictions.</p>
-      <ul>
+      <p>Our model is a feedforward neural network built from scratch with NumPy.</p>
+      <ul class="feature-list">
         <li><strong>Input Layer:</strong> 12 features</li>
-        <li><strong>Hidden Layers:</strong> 32 neurons with ReLU activation</li>
-        <li><strong>Output Layer:</strong> 1 neuron (predicted price)</li>
-        <li><strong>Loss Function:</strong> Mean Squared Error (MSE)</li>
+        <li><strong>Hidden Layers:</strong> 32 neurons with ReLU</li>
+        <li><strong>Output Layer:</strong> 1 neuron</li>
+        <li><strong>Loss Function:</strong> MSE</li>
         <li><strong>Optimizer:</strong> Gradient Descent</li>
       </ul>
-    </article>
+    </div>
 
-    <article>
+    <div class="panel about-card">
       <div class="icon">📊</div>
       <h3>Feature Engineering</h3>
-      <p>Raw price data is transformed into meaningful features that help the model learn patterns.</p>
-      <ul>
+      <p>Raw price data transformed into meaningful features.</p>
+      <ul class="feature-list">
         <li><strong>OHLCV:</strong> Open, High, Low, Close, Volume</li>
-        <li><strong>Returns:</strong> 1-period, 3-period, 6-period returns</li>
+        <li><strong>Returns:</strong> 1, 3, 6-period returns</li>
         <li><strong>Moving Averages:</strong> SMA-7, SMA-20</li>
         <li><strong>Volatility:</strong> 7-period volatility</li>
-        <li><strong>Range:</strong> High-Low percentage range</li>
+        <li><strong>Range:</strong> High-Low percentage</li>
       </ul>
-    </article>
+    </div>
 
-    <article>
+    <div class="panel about-card">
       <div class="icon">🔄</div>
       <h3>Ensemble Strategy</h3>
-      <p>The model is compared against a simple recent-return baseline on a validation set. A blend weight is selected from validation data, so the final prediction doesn't automatically trust the neural network when it performs worse than the baseline.</p>
-    </article>
+      <p>Compares neural net against simple baseline and picks the better one on validation.</p>
+    </div>
 
-    <article>
+    <div class="panel about-card">
       <div class="icon">⚡</div>
       <h3>Live Anchoring</h3>
-      <p>Every prediction is anchored to the actual live CoinGecko price captured at the moment of prediction. This ensures the forecast is always based on the most recent market data.</p>
-    </article>
+      <p>Predictions anchored to actual live CoinGecko price at prediction time.</p>
+    </div>
   </div>
 
   <div class="panel" style="margin-top: 40px;">
