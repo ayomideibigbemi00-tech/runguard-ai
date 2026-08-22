@@ -76,30 +76,11 @@ body {
 /* LIVE PRICES TABLE */
 .live-prices { padding: 40px 0; }
 .live-prices h2 { margin-bottom: 8px; }
-.table-wrapper {
-  overflow-x: auto;
-  margin-top: 20px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.price-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--panel);
-}
-.price-table th, .price-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-.price-table th {
-  font-size: 12px;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.price-table td {
-  font-size: 14px;
-}
+.table-wrapper { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: 12px; }
+.price-table { width: 100%; border-collapse: collapse; background: var(--panel); }
+.price-table th, .price-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+.price-table th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
+.price-table td { font-size: 14px; }
 .positive { color: #3fb950; }
 .negative { color: #f85149; }
 
@@ -112,26 +93,9 @@ body {
 
 /* Segmented control - make inactive button distinct */
 .segmented { display: flex; gap: 8px; margin: 9px 0 28px; }
-.segmented button {
-  flex: 1;
-  padding: 12px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--muted);
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-.segmented button:hover {
-  background: color-mix(in srgb, var(--panel) 80%, var(--accent) 20%);
-  border-color: var(--accent);
-}
-.segmented button.active {
-  background: var(--accent);
-  color: white;
-  border-color: transparent;
-}
+.segmented button { flex: 1; padding: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+.segmented button:hover { background: color-mix(in srgb, var(--panel) 80%, var(--accent) 20%); border-color: var(--accent); }
+.segmented button.active { background: var(--accent); color: white; border-color: transparent; }
 
 label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .price-live { margin: 7px 0 20px; color: var(--muted); font-size: 13px; }
@@ -147,22 +111,8 @@ label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-
 
 /* CHARTS PAGE */
 .chart-controls { margin: 20px 0; }
-.chart-controls select {
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--text);
-  font-size: 16px;
-}
-.chart-container {
-  margin-top: 20px;
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--panel);
-  min-height: 400px;
-}
+.chart-controls select { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 16px; }
+.chart-container { margin-top: 20px; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); min-height: 400px; }
 
 /* FEATURES */
 .features { padding: 20px 0 80px; }
@@ -175,13 +125,16 @@ article p { color: var(--muted); font-size: 15px; margin: 0; }
 /* FOOTER */
 .footer { padding: 24px 0 40px; color: var(--muted); font-size: 13px; text-align: center; }
 
-/* RESPONSIVE */
+/* RESPONSIVE - KEY FIX: show nav links on mobile */
 @media (max-width: 800px) {
-  .nav-links { display: none; }
+  .nav { flex-wrap: wrap; height: auto; padding: 10px 0; }
+  .brand { margin-bottom: 8px; }
+  .nav-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .nav-links a { font-size: 13px; }
+  .theme-picker { margin-left: auto; }
   .grid.three { grid-template-columns: 1fr; }
   .hero { padding: 60px 0 40px; }
   .predict-layout { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
-  .theme-picker { margin-left: auto; }
   .chart-container { padding: 10px; min-height: 300px; }
 }
