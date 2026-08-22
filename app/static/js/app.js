@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!response.ok) throw new Error('Failed to fetch movers');
       const data = await response.json();
       
-      // Render gainers
       if (data.gainers && data.gainers.length > 0) {
         gainersList.innerHTML = data.gainers.map(coin => `
           <tr>
@@ -35,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
       }
       
-      // Render losers
       if (data.losers && data.losers.length > 0) {
         losersList.innerHTML = data.losers.map(coin => `
           <tr>
@@ -120,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchLivePrice, 60000);
 });
 
-// Chart.js implementation
+// Chart.js implementation (fixed for endless drag)
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('price-chart');
   const coinSelect = document.getElementById('chart-coin');
@@ -174,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false, // Disable animation to prevent layout issues
         plugins: {
           legend: {
             labels: {

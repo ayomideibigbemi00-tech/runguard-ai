@@ -91,7 +91,7 @@ body {
 .panel, article { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 26px; box-shadow: var(--shadow); }
 .controls select { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-top: 9px; }
 
-/* Segmented control - make inactive button distinct */
+/* Segmented control */
 .segmented { display: flex; gap: 8px; margin: 9px 0 28px; }
 .segmented button { flex: 1; padding: 12px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
 .segmented button:hover { background: color-mix(in srgb, var(--panel) 80%, var(--accent) 20%); border-color: var(--accent); }
@@ -112,7 +112,29 @@ label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-
 /* CHARTS PAGE */
 .chart-controls { margin: 20px 0; }
 .chart-controls select { padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 16px; }
-.chart-container { margin-top: 20px; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); min-height: 400px; }
+.chart-container {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  height: 450px; /* FIXED HEIGHT */
+  position: relative;
+  overflow: hidden;
+}
+#price-chart {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 410px;
+}
+
+/* MOVERS TABLE */
+.movers { padding: 40px 0; }
+.movers h2 { margin-bottom: 20px; }
+.movers-table { width: 100%; border-collapse: collapse; }
+.movers-table th, .movers-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+.movers-table th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
+.movers-table td { font-size: 14px; }
 
 /* FEATURES */
 .features { padding: 20px 0 80px; }
@@ -125,7 +147,7 @@ article p { color: var(--muted); font-size: 15px; margin: 0; }
 /* FOOTER */
 .footer { padding: 24px 0 40px; color: var(--muted); font-size: 13px; text-align: center; }
 
-/* RESPONSIVE - KEY FIX: show nav links on mobile */
+/* RESPONSIVE */
 @media (max-width: 800px) {
   .nav { flex-wrap: wrap; height: auto; padding: 10px 0; }
   .brand { margin-bottom: 8px; }
@@ -136,12 +158,5 @@ article p { color: var(--muted); font-size: 15px; margin: 0; }
   .hero { padding: 60px 0 40px; }
   .predict-layout { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
-  .chart-container { padding: 10px; min-height: 300px; }
+  .chart-container { padding: 10px; height: 350px; }
 }
-/* MOVERS TABLE */
-.movers { padding: 40px 0; }
-.movers h2 { margin-bottom: 20px; }
-.movers-table { width: 100%; border-collapse: collapse; }
-.movers-table th, .movers-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-.movers-table th { font-size: 12px; text-transform: uppercase; color: var(--muted); }
-.movers-table td { font-size: 14px; }
