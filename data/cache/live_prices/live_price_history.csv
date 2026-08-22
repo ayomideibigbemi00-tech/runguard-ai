@@ -20849,3 +20849,53 @@ ee9ac994c252442baef1c9231bdb36ec,mantle,MNT,Mantle,0.512819,2026-08-22T01:04:03Z
 e80b0e9f2c864297831c904ea39f2837,hedera-hashgraph,HBAR,Hedera,0.079751,2026-08-22T01:04:03Z,1787360530,CoinGecko simple/price
 2124c1f7a2af40b8bbaca10acbcf0e2a,kaspa,KAS,Kaspa,0.02999509,2026-08-22T01:04:03Z,1787360530,CoinGecko simple/price
 eaa5fb7015ba4c479388454fe17c3cdf,monero,XMR,Monero,405.44,2026-08-22T01:04:03Z,1787360530,CoinGecko simple/price
+d8d33623717c43118bcd96509488347c,bitcoin,BTC,Bitcoin,77965.0,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+43ff23fa2eb043e3ad5d1699a250ba84,ethereum,ETH,Ethereum,2519.68,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+71a45713e3db451bb854d6fce3d69dc6,tether,USDT,Tether,0.999842,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+172ecb96bb2c49a2996af4aa786770c0,binancecoin,BNB,BNB,688.46,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+2a96f3b6772a476fb5305ee32840167c,solana,SOL,Solana,93.87,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+f05ba3aae6cd4de3b501f179f9023127,usd-coin,USDC,USDC,0.99993,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+19f0a9f93f6c4e0e8f15aa90eb482ebb,ripple,XRP,XRP,1.46,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+aae8ea8b22cc4fa6afbe9e212eca0685,dogecoin,DOGE,Dogecoin,0.091748,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+fb61ede4da164357a9a04f1dde0c026e,cardano,ADA,Cardano,0.229542,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+ecd1aebbf65f4733adbdc94a81f86e24,tron,TRX,TRON,0.344081,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+4d6081cfbf6d41ecaa0af39147ca8957,avalanche-2,AVAX,Avalanche,7.89,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+1ea162950d6d47729e6f74788364a943,chainlink,LINK,Chainlink,12.09,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+67ebd9eeb8da49a38a4d75b6161a6438,shiba-inu,SHIB,Shiba Inu,6.11e-06,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+c87eb8827ea1465daaf15de87a4b9dde,polkadot,DOT,Polkadot,0.968449,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+1d67f7bd78a14ff38a4297ed6c990352,wrapped-bitcoin,WBTC,Wrapped Bitcoin,77904.0,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+f666d89b7ece4c3a90eb25758ed7bf34,bitcoin-cash,BCH,Bitcoin Cash,295.13,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+619fea38ee944e5187c69f093210b2db,litecoin,LTC,Litecoin,53.9,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+e052924ee83248e6bc265bd0d1c35a12,near,NEAR,NEAR Protocol,1.99,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+a203a572077d4f728176fd02da9b8334,uniswap,UNI,Uniswap,4.25,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+b206aef9971248fa9743cdf85b07eb52,stellar,XLM,Stellar,0.201667,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+d666a39b6c9c45fe9347440342c2bd06,internet-computer,ICP,Internet Computer,2.56,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+3210241cdfea4ec3a50b86a2664255e1,aptos,APT,Aptos,0.657785,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+05c3bc5d31f84247b0d29d21708714f7,sui,SUI,Sui,0.854315,2026-08-22T01:05:04Z,1787360570,CoinGecko simple/price
+92c781af99c9459781af7bbd6766e7df,filecoin,FIL,Filecoin,0.82557,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+4000d9534f4e43f5bbda54ab660384fb,cosmos,ATOM,Cosmos Hub,1.61,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+f7cf73c4f77d46cf93068dd56202cc91,vechain,VET,VeChain,0.00586398,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+9a859dd13c314d5285ee6543c6639848,aave,AAVE,Aave,123.78,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+b32d15c30d594a5290b033303fffb035,algorand,ALGO,Algorand,0.097827,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+fa22241642694597ba3782e8af6ce5dc,the-graph,GRT,The Graph,0.01747675,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+9520cd2a49b742a2b0aff8b1a75e11bf,arbitrum,ARB,Arbitrum,0.098704,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+6f8481777b9141be88c73ced157a90c5,optimism,OP,Optimism,0.108792,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+292dac4baa53415d99b3a7275b1f9ecf,render-token,RENDER,Render,1.54,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+0271a4da3e074f4481a1e899d6e3a5f1,injective-protocol,INJ,Injective,5.1,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+81a3b54b7fc7417aab343740227c4102,maker,MKR,Maker,1555.87,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+2741b4822b9041e18021c2c737287963,the-sandbox,SAND,The Sandbox,0.04843857,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+9f7c1a92b7ff473aaf8c37bb1828ca5d,decentraland,MANA,Decentraland,0.077835,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+ba6d2b6b8aae4a9f831a8e603cc6f43a,axie-infinity,AXS,Axie Infinity,1.081,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+01ca28bfbdfb463799f5a18efcaeb61a,tezos,XTZ,Tezos,0.24303,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+02d07511e1dc44b29849c58d0a908a8b,eos,EOS,EOS,0.075904,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+e3b1bea1a6ad4b47820c5931bd3ad2e7,theta-token,THETA,Theta Network,0.18948,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+9ce2b58f495441fe8ed747738aacce2c,flow,FLOW,Flow,0.03188666,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+061d5b6a07e64a69b53051eacec26220,fantom,FTM,Fantom,0.03426859,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+3abd0c52a73d47e5a444596a1ddf5660,neo,NEO,Neo,2.21,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+3d0168b355c948fbaa8e410ef5f24b39,kucoin-shares,KCS,KuCoin Token,7.88,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+86f73027f0cc4e90ba41afbfceb0bc6f,wrapped-steth,WSTETH,Wrapped stETH,3128.75,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+7a2e1578b30844fe839bfee5248a4b2b,mantle,MNT,Mantle,0.512885,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+4c87a0d2b8d7446fa3e2ae11b8b4b66e,immutable-x,IMX,Immutable,0.126679,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+151f62960c02483b8121ebc877b2b46e,hedera-hashgraph,HBAR,Hedera,0.079819,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+ededf2fbd87f41baa20cb28af07da2d1,kaspa,KAS,Kaspa,0.02999999,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
+710dc3f67ba2440aa363d8db0aa3d3fc,monero,XMR,Monero,405.73,2026-08-22T01:05:04Z,1787360580,CoinGecko simple/price
