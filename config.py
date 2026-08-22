@@ -10,7 +10,7 @@ VS_CURRENCY = os.getenv('COINGECKO_VS_CURRENCY', 'usd')
 COINGECKO_BASE_URL = os.getenv('COINGECKO_BASE_URL', 'https://api.coingecko.com/api/v3')
 COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '').strip()
 
-# CRITICAL: Lower this to 0.1 hours (6 minutes) to prevent 429s!
+# Reduce cache expiry to 0.1 hours (6 minutes) to prevent 429s
 CACHE_EXPIRY_HOURS = float(os.getenv('CACHE_EXPIRY_HOURS', '0.1'))
 
 REQUEST_TIMEOUT_SECONDS = float(os.getenv('REQUEST_TIMEOUT_SECONDS', '30'))
@@ -20,59 +20,28 @@ TRAIN_RATIO = 0.70
 VALIDATION_RATIO = 0.15
 TEST_RATIO = 0.15
 
-# Exactly 50 selectable CoinGecko coin IDs. The app uses IDs, not symbols, because
-# CoinGecko documents IDs as the unique identifiers for coin endpoints.
+# Top 20 most reliable coins (by market cap, liquidity, and API stability)
 COINS = [
     {'id': 'bitcoin', 'symbol': 'BTC', 'name': 'Bitcoin'},
     {'id': 'ethereum', 'symbol': 'ETH', 'name': 'Ethereum'},
     {'id': 'tether', 'symbol': 'USDT', 'name': 'Tether'},
     {'id': 'binancecoin', 'symbol': 'BNB', 'name': 'BNB'},
     {'id': 'solana', 'symbol': 'SOL', 'name': 'Solana'},
-    {'id': 'usd-coin', 'symbol': 'USDC', 'name': 'USDC'},
     {'id': 'ripple', 'symbol': 'XRP', 'name': 'XRP'},
-    {'id': 'dogecoin', 'symbol': 'DOGE', 'name': 'Dogecoin'},
+    {'id': 'usd-coin', 'symbol': 'USDC', 'name': 'USDC'},
     {'id': 'cardano', 'symbol': 'ADA', 'name': 'Cardano'},
-    {'id': 'tron', 'symbol': 'TRX', 'name': 'TRON'},
+    {'id': 'dogecoin', 'symbol': 'DOGE', 'name': 'Dogecoin'},
     {'id': 'avalanche-2', 'symbol': 'AVAX', 'name': 'Avalanche'},
     {'id': 'chainlink', 'symbol': 'LINK', 'name': 'Chainlink'},
-    {'id': 'shiba-inu', 'symbol': 'SHIB', 'name': 'Shiba Inu'},
     {'id': 'polkadot', 'symbol': 'DOT', 'name': 'Polkadot'},
-    {'id': 'wrapped-bitcoin', 'symbol': 'WBTC', 'name': 'Wrapped Bitcoin'},
-    {'id': 'bitcoin-cash', 'symbol': 'BCH', 'name': 'Bitcoin Cash'},
     {'id': 'litecoin', 'symbol': 'LTC', 'name': 'Litecoin'},
-    {'id': 'near', 'symbol': 'NEAR', 'name': 'NEAR Protocol'},
-    {'id': 'uniswap', 'symbol': 'UNI', 'name': 'Uniswap'},
+    {'id': 'bitcoin-cash', 'symbol': 'BCH', 'name': 'Bitcoin Cash'},
     {'id': 'stellar', 'symbol': 'XLM', 'name': 'Stellar'},
-    {'id': 'internet-computer', 'symbol': 'ICP', 'name': 'Internet Computer'},
-    {'id': 'aptos', 'symbol': 'APT', 'name': 'Aptos'},
-    {'id': 'sui', 'symbol': 'SUI', 'name': 'Sui'},
-    {'id': 'filecoin', 'symbol': 'FIL', 'name': 'Filecoin'},
-    {'id': 'cosmos', 'symbol': 'ATOM', 'name': 'Cosmos Hub'},
-    {'id': 'vechain', 'symbol': 'VET', 'name': 'VeChain'},
+    {'id': 'uniswap', 'symbol': 'UNI', 'name': 'Uniswap'},
     {'id': 'aave', 'symbol': 'AAVE', 'name': 'Aave'},
-    {'id': 'algorand', 'symbol': 'ALGO', 'name': 'Algorand'},
-    {'id': 'the-graph', 'symbol': 'GRT', 'name': 'The Graph'},
-    {'id': 'arbitrum', 'symbol': 'ARB', 'name': 'Arbitrum'},
-    {'id': 'optimism', 'symbol': 'OP', 'name': 'Optimism'},
-    {'id': 'render-token', 'symbol': 'RENDER', 'name': 'Render'},
-    {'id': 'injective-protocol', 'symbol': 'INJ', 'name': 'Injective'},
-    {'id': 'maker', 'symbol': 'MKR', 'name': 'Maker'},
-    {'id': 'the-sandbox', 'symbol': 'SAND', 'name': 'The Sandbox'},
-    {'id': 'decentraland', 'symbol': 'MANA', 'name': 'Decentraland'},
-    {'id': 'axie-infinity', 'symbol': 'AXS', 'name': 'Axie Infinity'},
-    {'id': 'tezos', 'symbol': 'XTZ', 'name': 'Tezos'},
-    {'id': 'eos', 'symbol': 'EOS', 'name': 'EOS'},
-    {'id': 'theta-token', 'symbol': 'THETA', 'name': 'Theta Network'},
-    {'id': 'flow', 'symbol': 'FLOW', 'name': 'Flow'},
-    {'id': 'fantom', 'symbol': 'FTM', 'name': 'Fantom'},
-    {'id': 'neo', 'symbol': 'NEO', 'name': 'Neo'},
-    {'id': 'kucoin-shares', 'symbol': 'KCS', 'name': 'KuCoin Token'},
-    {'id': 'wrapped-steth', 'symbol': 'WSTETH', 'name': 'Wrapped stETH'},
-    {'id': 'mantle', 'symbol': 'MNT', 'name': 'Mantle'},
-    {'id': 'immutable-x', 'symbol': 'IMX', 'name': 'Immutable'},
+    {'id': 'monero', 'symbol': 'XMR', 'name': 'Monero'},
     {'id': 'hedera-hashgraph', 'symbol': 'HBAR', 'name': 'Hedera'},
     {'id': 'kaspa', 'symbol': 'KAS', 'name': 'Kaspa'},
-    {'id': 'monero', 'symbol': 'XMR', 'name': 'Monero'},
 ]
 COIN_MAP = {coin['id']: coin for coin in COINS}
 
