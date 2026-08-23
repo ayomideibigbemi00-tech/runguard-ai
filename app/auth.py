@@ -1,27 +1,25 @@
 import os
+import bcrypt
 from fastapi import Request
 from itsdangerous import URLSafeTimedSerializer, BadSignature
-from passlib.hash import bcrypt
 from app.db import get_db
 
 # Read secret key from environment variable (set on Railway)
-# If not set, fallback to a default for local testing
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-fallback-key-12345")
-
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
-
 def hash_password(password: str) -> str:
-    return bcrypt.hash(password)
+    # bcrypt has a 72-byte limit, so we truncate safely
+    return bcrypt.hashpw(password.encode('utf-8')[:72], bcrypt.gensalt()).decode('utf-8')
 
-
-def verify_password(password: str, hash: str) -> bool:
-    return bcrypt.verify(password, hash)
-
+def verify_password(password: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(password.encode('utf-8')[:72], hashed.encode('utf-8'))
+    except ValueError:
+        return False
 
 def create_session_token(user_id: int) -> str:
     return serializer.dumps({"user_id": user_id})
-
 
 def get_current_user(request: Request):
     token = request.cookies.get("session")
