@@ -1,20 +1,27 @@
-from fastapi import Request, HTTPException, Depends
+import os
+from fastapi import Request
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from passlib.hash import bcrypt
 from app.db import get_db
 
-# Secret key for signing cookies (change this in production!)
-SECRET_KEY = "change-this-to-a-random-secret-string"
+# Read secret key from environment variable (set on Railway)
+# If not set, fallback to a default for local testing
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-fallback-key-12345")
+
 serializer = URLSafeTimedSerializer(SECRET_KEY)
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hash(password)
 
+
 def verify_password(password: str, hash: str) -> bool:
     return bcrypt.verify(password, hash)
 
+
 def create_session_token(user_id: int) -> str:
     return serializer.dumps({"user_id": user_id})
+
 
 def get_current_user(request: Request):
     token = request.cookies.get("session")
