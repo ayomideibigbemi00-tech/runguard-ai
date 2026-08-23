@@ -20,11 +20,10 @@ app = FastAPI(title='Runguard AI', version='3.1.0')
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 templates = Jinja2Templates(directory=ROOT / 'templates')
 
-# Initialize database and start background loop on startup
+
 @app.on_event("startup")
 async def startup():
     init_db()
-    # Start the background resolver loop
     asyncio.create_task(prediction_resolver_loop())
 
 class PredictRequest(BaseModel):
@@ -40,7 +39,6 @@ def base_context(request: Request, user=None):
         'user': user,
     }
 
-# Auth pages
 @app.get('/signup', response_class=HTMLResponse)
 def signup_page(request: Request):
     return templates.TemplateResponse(request=request, name='signup.html', context=base_context(request))
@@ -99,7 +97,6 @@ def history_page(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url='/login', status_code=302)
-    # The background job resolves automatically; just display the latest data
     resolve_due_predictions()
     return templates.TemplateResponse(request=request, name='history.html', context={**base_context(request, user), 'page': 'history'})
 
@@ -136,7 +133,6 @@ def about_page(request: Request):
     user = get_current_user(request)
     return templates.TemplateResponse(request=request, name='about.html', context={**base_context(request, user), 'page': 'about'})
 
-# API endpoints
 @app.get('/api/coins')
 def api_coins():
     return {'coins': COINS, 'count': len(COINS)}

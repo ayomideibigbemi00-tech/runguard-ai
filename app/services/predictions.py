@@ -1,6 +1,5 @@
 from __future__ import annotations
 import json
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -17,7 +16,6 @@ def _ensure_dir():
 
 
 def save_prediction(user_id, coin_id, interval, horizon, predicted_price, current_price, horizon_label, strategy, validation_mae_pct, baseline_validation_mae_pct, target_time_utc):
-    """Save prediction to SQLite database."""
     conn = get_db()
     cur = conn.execute('''
         INSERT INTO predictions (
@@ -53,22 +51,14 @@ def list_predictions(user_id: int, limit: int = 100, status: Optional[str] = Non
     records = []
     for row in rows:
         record = dict(row)
-        # Convert id to prediction_id for compatibility
         record['prediction_id'] = record.pop('id')
         records.append(record)
     return records
 
 
 def resolve_due_predictions(user_id: int | None = None) -> list[dict]:
-    """Resolve pending predictions whose target time has passed.
-    
-    Uses live price first, but falls back to the last known historical price
-    if the live API is unavailable (e.g. rate limited).
-    """
     conn = get_db()
     now = datetime.now(timezone.utc)
-    
-    # Get pending predictions
     if user_id:
         rows = conn.execute("SELECT * FROM predictions WHERE user_id = ? AND status = 'pending'", (user_id,)).fetchall()
     else:
@@ -79,17 +69,14 @@ def resolve_due_predictions(user_id: int | None = None) -> list[dict]:
         target_time = row['target_time_utc']
         if not target_time:
             continue
-        
         try:
             target_dt = datetime.fromisoformat(target_time.replace('Z', '+00:00'))
         except ValueError:
             continue
-
         if now < target_dt:
-            continue  # Still pending
+            continue
 
         actual_price = None
-        # 1. Try live price (which can fail if rate limited)
         try:
             from app.services.data import fetch_current_prices
             prices = fetch_current_prices()
@@ -97,7 +84,6 @@ def resolve_due_predictions(user_id: int | None = None) -> list[dict]:
         except Exception:
             actual_price = None
         
-        # 2. Fallback to historical data if live price failed
         if actual_price is None:
             try:
                 from app.services.data import load_candles

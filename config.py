@@ -1,37 +1,23 @@
 from pathlib import Path
 import os
 
-# ============================================================
 # Use the Railway Volume mount point for persistent data.
-# When running locally, this will default to the project data folder.
-# ============================================================
 DATA_DIR = Path('/app/data') if os.getenv('RAILWAY_ENVIRONMENT') else Path(__file__).resolve().parent / 'data'
 CACHE_DIR = DATA_DIR / 'cache'
 MODELS_DIR = DATA_DIR / 'models'
 
-# ============================================================
-# CoinGecko API Settings
-# ============================================================
 VS_CURRENCY = os.getenv('COINGECKO_VS_CURRENCY', 'usd')
 COINGECKO_BASE_URL = os.getenv('COINGECKO_BASE_URL', 'https://api.coingecko.com/api/v3')
 COINGECKO_API_KEY = os.getenv('COINGECKO_API_KEY', '').strip()
 
-# Cache expiry: 0.1 hours (6 minutes) - prevents hitting 429 rate limits
 CACHE_EXPIRY_HOURS = float(os.getenv('CACHE_EXPIRY_HOURS', '0.1'))
 REQUEST_TIMEOUT_SECONDS = float(os.getenv('REQUEST_TIMEOUT_SECONDS', '30'))
 
-# ============================================================
-# Model Settings
-# ============================================================
 WINDOW_SIZE = 30
 TRAIN_RATIO = 0.70
 VALIDATION_RATIO = 0.15
 TEST_RATIO = 0.15
 
-# ============================================================
-# Top 20 most reliable coins (by market cap, liquidity, and API stability)
-# Reduced from 50 to avoid CoinGecko rate limits
-# ============================================================
 COINS = [
     {'id': 'bitcoin', 'symbol': 'BTC', 'name': 'Bitcoin'},
     {'id': 'ethereum', 'symbol': 'ETH', 'name': 'Ethereum'},
@@ -56,10 +42,6 @@ COINS = [
 ]
 COIN_MAP = {coin['id']: coin for coin in COINS}
 
-# ============================================================
-# Horizon is expressed in candles.
-# Hourly supports up to 30 days; daily supports 30 days.
-# ============================================================
 HORIZONS = {
     'hourly': {
         1: '1 hour', 2: '2 hours', 3: '3 hours', 6: '6 hours', 12: '12 hours',
@@ -71,9 +53,6 @@ HORIZONS = {
     },
 }
 
-# ============================================================
-# Features used for training the model
-# ============================================================
 FEATURES = [
     'open', 'high', 'low', 'close', 'volume',
     'return_1', 'return_3', 'return_6',
