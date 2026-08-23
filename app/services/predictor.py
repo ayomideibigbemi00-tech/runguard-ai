@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from config import FEATURES, HORIZONS
 from app.services.data import load_candles, fetch_current_prices, normalize_coin_id
 from app.services.predictions import save_prediction
+from app.model.network import NeuralNetwork  # <--- Imports the CORE network
 
 
 class PredictionResult:
@@ -37,59 +38,6 @@ def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df['volatility_7'] = df['close'].pct_change().rolling(window=7).std()
     df['range_pct'] = (df['high'] - df['low']) / df['close']
     return df[FEATURES]
-
-
-class NeuralNetwork:
-    """A simple feedforward neural network built from scratch using NumPy."""
-    def __init__(self, input_size, hidden_size=32, output_size=1, learning_rate=0.01):
-        # He initialization to prevent vanishing/exploding gradients
-        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
-        self.b1 = np.zeros((1, hidden_size))
-        self.W2 = np.random.randn(hidden_size, output_size) * np.sqrt(2.0 / hidden_size)
-        self.b2 = np.zeros((1, output_size))
-        self.lr = learning_rate
-
-    def forward(self, X):
-        # X shape: (n_samples, input_size)
-        self.z1 = np.dot(X, self.W1) + self.b1  # (n_samples, hidden_size)
-        self.a1 = np.maximum(0, self.z1)  # ReLU activation
-        self.z2 = np.dot(self.a1, self.W2) + self.b2  # (n_samples, output_size)
-        return self.z2
-
-    def backward(self, X, y, y_pred):
-        """
-        Backpropagation. All shapes are explicit to avoid broadcasting errors.
-        X: (n_samples, input_size)
-        y: (n_samples, output_size)
-        y_pred: (n_samples, output_size)
-        """
-        n_samples = X.shape[0]
-        # Output layer gradient (MSE loss derivative)
-        dZ2 = (y_pred - y) / n_samples  # (n_samples, output_size)
-        dW2 = np.dot(self.a1.T, dZ2)  # (hidden_size, output_size)
-        db2 = np.sum(dZ2, axis=0, keepdims=True)
-
-        # Hidden layer gradient
-        dA1 = np.dot(dZ2, self.W2.T)  # (n_samples, hidden_size)
-        dZ1 = dA1 * (self.z1 > 0)  # ReLU derivative
-        dW1 = np.dot(X.T, dZ1)  # (input_size, hidden_size)
-        db1 = np.sum(dZ1, axis=0, keepdims=True)
-
-        # Update weights
-        self.W2 -= self.lr * dW2
-        self.b2 -= self.lr * db2
-        self.W1 -= self.lr * dW1
-        self.b1 -= self.lr * db1
-
-    def train(self, X, y, epochs=200):
-        # Ensure y is 2D
-        y = y.reshape(-1, 1)
-        for _ in range(epochs):
-            y_pred = self.forward(X)
-            self.backward(X, y, y_pred)
-
-    def predict(self, X):
-        return self.forward(X).flatten()[0]
 
 
 def _train_model(df, horizon):
@@ -125,7 +73,7 @@ def _train_model(df, horizon):
     X_train = (X_train - mean) / std
     X_test = (X_test - mean) / std
 
-    # Train Neural Network (EXACTLY AS IT WAS)
+    # Train Neural Network (Imported from app/model/network.py)
     model = NeuralNetwork(input_size=X_train.shape[1], hidden_size=32, learning_rate=0.01)
     model.train(X_train, y_train, epochs=200)
 
