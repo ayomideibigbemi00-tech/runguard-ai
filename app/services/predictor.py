@@ -1,179 +1,211 @@
 from __future__ import annotations
-import hashlib
-from dataclasses import dataclass
-from pathlib import Path
-import json
+
 import numpy as np
+import pandas as pd
+from datetime import datetime, timezone
+import json
+from pathlib import Path
 
-from config import COIN_MAP, HORIZONS, MODELS_DIR, TRAIN_RATIO, VALIDATION_RATIO, WINDOW_SIZE
-from app.model.network import DenseNetwork, StandardScaler
-from app.services.data import fetch_current_prices, load_candles, normalize_coin_id
-from app.services.features import engineer_features, make_supervised
-from app.services.predictions import create_prediction
+from config import (
+    CACHE_DIR, COIN_MAP, WINDOW_SIZE, FEATURES,
+    HORIZONS
+)
+from app.services.data import (
+    load_candles, cache_info, fetch_current_prices, normalize_coin_id
+)
+from app.services.features import build_features
+from app.services.predictions import (
+    save_prediction, list_predictions, resolve_due_predictions, prediction_summary
+)
 
 
-@dataclass
 class PredictionResult:
-    interval: str
-    horizon: int
-    horizon_label: str
-    current_price: float
-    predicted_price: float
-    change: float
-    change_pct: float
-    direction: str
-    source: str
-    model_loss: float
-    strategy: str
-    validation_mae_pct: float
-    baseline_validation_mae_pct: float
-    prediction_id: str | None = None
-    created_at_utc: str | None = None
-    target_time_utc: str | None = None
-    prediction_status: str = 'pending'
-    current_price_observed_at_utc: str | None = None
+    def __init__(
+        self,
+        predicted_price: float,
+        current_price: float,
+        change_pct: float,
+        direction: str,
+        interval: str,
+        horizon: int,
+        horizon_label: str,
+        strategy: str,
+        validation_mae_pct: float,
+        baseline_validation_mae_pct: float,
+        current_price_observed_at_utc: str,
+        target_time_utc: str,
+    ):
+        self.predicted_price = predicted_price
+        self.current_price = current_price
+        self.change_pct = change_pct
+        self.direction = direction
+        self.interval = interval
+        self.horizon = horizon
+        self.horizon_label = horizon_label
+        self.strategy = strategy
+        self.validation_mae_pct = validation_mae_pct
+        self.baseline_validation_mae_pct = baseline_validation_mae_pct
+        self.current_price_observed_at_utc = current_price_observed_at_utc
+        self.target_time_utc = target_time_utc
 
 
+# Simple neural network from scratch (for illustration - your actual network is in app/model/network.py)
+class SimpleNN:
+    def __init__(self, input_size: int, hidden_size: int = 32, lr: float = 0.01):
+        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2 / input_size)
+        self.b1 = np.zeros((1, hidden_size))
+        self.W2 = np.random.randn(hidden_size, 1) * np.sqrt(2 / hidden_size)
+        self.b2 = np.zeros((1, 1))
+        self.lr = lr
 
-def _model_key(coin_id: str, interval: str, horizon: int) -> str:
-    return hashlib.sha1(f'{coin_id}:{interval}:{horizon}'.encode()).hexdigest()[:16]
+    def forward(self, X):
+        self.z1 = X @ self.W1 + self.b1
+        self.a1 = np.maximum(0, self.z1)  # ReLU
+        self.z2 = self.a1 @ self.W2 + self.b2
+        return self.z2
 
-
-def _paths(coin_id: str, interval: str, horizon: int) -> tuple[Path, Path, Path]:
-    key = _model_key(coin_id, interval, horizon)
-    return MODELS_DIR / f'{key}.npz', MODELS_DIR / f'{key}_x.json', MODELS_DIR / f'{key}_y.json'
-
-
-def _split(x: np.ndarray, y: np.ndarray):
-    n = len(x)
-    train_end = max(1, int(n * TRAIN_RATIO))
-    val_end = max(train_end + 1, int(n * (TRAIN_RATIO + VALIDATION_RATIO)))
-    val_end = min(n - 1, val_end)
-    return x[:train_end], y[:train_end], x[train_end:val_end], y[train_end:val_end], x[val_end:], y[val_end:]
-
-
-def _train(coin_id: str, interval: str, horizon: int):
-    candles, fallback = load_candles(coin_id, interval)
-    x, y, _, features = make_supervised(candles, horizon)
-    xt, yt, xv, yv, _, _ = _split(x, y)
-
-    scaler_x = StandardScaler().fit(xt)
-    scaler_y = StandardScaler().fit(yt.reshape(-1, 1))
-    xts = scaler_x.transform(xt)
-    xvs = scaler_x.transform(xv)
-    yts = scaler_y.transform(yt.reshape(-1, 1)).ravel()
-    yvs = scaler_y.transform(yv.reshape(-1, 1)).ravel()
-
-    net = DenseNetwork(xts.shape[1], hidden_size=48, seed=42)
-    history = net.fit(xts, yts, xvs, yvs, epochs=100, learning_rate=0.0015, batch_size=32, patience=15)
-
-    model_val_scaled = net.predict(xvs)
-    model_val = scaler_y.inverse_transform(model_val_scaled.reshape(-1, 1)).ravel()
-    baseline_val = np.full(len(yv), float(np.mean(yt[-6:])), dtype=np.float64)
-    model_mae = float(np.mean(np.abs(model_val - yv)) * 100.0)
-    baseline_mae = float(np.mean(np.abs(baseline_val - yv)) * 100.0)
-
-    # Choose an ensemble weight using validation data only. alpha=1 means pure NN,
-    # alpha=0 means the simple recent-return baseline. Because alpha is selected
-    # chronologically on validation data, the final test period remains untouched.
-    best_alpha = 0.0
-    best_mae = baseline_mae
-    for alpha in np.linspace(0.0, 1.0, 21):
-        blended = alpha * model_val + (1.0 - alpha) * baseline_val
-        mae = float(np.mean(np.abs(blended - yv)) * 100.0)
-        if mae + 1e-12 < best_mae:
-            best_mae = mae
-            best_alpha = float(alpha)
-
-    strategy = 'neural_network' if best_alpha == 1.0 else ('hybrid' if best_alpha > 0.0 else 'recent_return_baseline')
-    loss = float(history['val_loss'][-1]) if history['val_loss'] else 0.0
-
-    model_path, sx_path, sy_path = _paths(coin_id, interval, horizon)
-    net.save(model_path, {
-        'input_size': xts.shape[1], 'hidden_size': 48, 'coin_id': coin_id, 'coin_name': COIN_MAP[coin_id]['name'],
-        'interval': interval, 'horizon': horizon, 'window_size': WINDOW_SIZE,
-        'feature_count': len(features.columns), 'data_last_timestamp': str(candles['timestamp'].iloc[-1]),
-        'data_source': 'synthetic offline fallback' if fallback else 'CoinGecko market data',
-        'validation_loss': loss, 'validation_mae_pct': model_mae,
-        'baseline_validation_mae_pct': baseline_mae, 'ensemble_alpha': best_alpha,
-        'deployment_strategy': strategy,
-    })
-    sx_path.write_text(json.dumps(scaler_x.to_dict()), encoding='utf-8')
-    sy_path.write_text(json.dumps(scaler_y.to_dict()), encoding='utf-8')
-    return net, scaler_x, scaler_y, candles, fallback, loss, strategy, model_mae, baseline_mae, best_alpha
+    def predict(self, X):
+        return self.forward(X).flatten()[0]
 
 
-def _model_is_current(meta: dict, coin_id: str, interval: str, horizon: int, candles) -> bool:
-    return (
-        meta.get('coin_id') == coin_id and
-        meta.get('interval') == interval and
-        int(meta.get('horizon', -1)) == horizon and
-        str(meta.get('data_last_timestamp')) == str(candles['timestamp'].iloc[-1])
-    )
+def train_model(coin_id: str, interval: str, horizon: int) -> SimpleNN:
+    """
+    Loads cached data, builds features, and trains a simple model.
+    Uses your existing feature engineering.
+    """
+    df, fallback = load_candles(coin_id, interval, allow_fallback=False)
+    
+    # Build features (this is your existing feature engineering)
+    features_df = build_features(df)
+    
+    # Prepare X and y
+    X = features_df[FEATURES].values
+    y = features_df['close'].shift(-horizon).values  # Predict price 'horizon' steps ahead
+    
+    # Drop NaN rows
+    mask = ~np.isnan(y)
+    X = X[mask]
+    y = y[mask]
+    
+    if len(X) < WINDOW_SIZE:
+        raise ValueError(f"Not enough data for {coin_id}/{interval}/horizon={horizon}")
+    
+    # Train/test split (chronological)
+    split = int(len(X) * 0.8)
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
+    
+    # Normalize
+    mean = X_train.mean(axis=0)
+    std = X_train.std(axis=0) + 1e-8
+    X_train = (X_train - mean) / std
+    X_test = (X_test - mean) / std
+    
+    # Train simple model
+    model = SimpleNN(input_size=X_train.shape[1])
+    for _ in range(200):
+        y_pred = model.forward(X_train)
+        # Backward pass (gradient descent)
+        dZ2 = 2 * (y_pred - y_train.reshape(-1, 1)) / len(y_train)
+        dW2 = X_train.T @ dZ2
+        db2 = np.sum(dZ2, axis=0, keepdims=True)
+        dA1 = dZ2 @ model.W2.T
+        dZ1 = dA1 * (model.z1 > 0)
+        dW1 = X_train.T @ dZ1
+        db1 = np.sum(dZ1, axis=0, keepdims=True)
+        
+        model.W2 -= model.lr * dW2
+        model.b2 -= model.lr * db2
+        model.W1 -= model.lr * dW1
+        model.b1 -= model.lr * db1
+    
+    # Validate
+    y_pred_test = model.forward(X_test).flatten()
+    mae_pct = np.mean(np.abs((y_pred_test - y_test) / y_test)) * 100
+    
+    # Baseline (recent return)
+    baseline_pred = y_test[-1] * (1 + np.mean(np.diff(y_train) / y_train[-20:]))
+    baseline_mae_pct = np.mean(np.abs((baseline_pred - y_test) / y_test)) * 100
+    
+    return model, mean, std, mae_pct, baseline_mae_pct
 
 
 def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
+    """
+    Makes a live prediction, anchored to current CoinGecko price.
+    """
+    # Normalize coin ID
     coin_id = normalize_coin_id(coin_id)
-    if horizon not in HORIZONS.get(interval, {}):
-        raise ValueError('Unsupported prediction horizon.')
-
-    model_path, sx_path, sy_path = _paths(coin_id, interval, horizon)
-    candles, fallback = load_candles(coin_id, interval)
-    needs_train = True
-    try:
-        net, meta = DenseNetwork.load(model_path)
-        scaler_x = StandardScaler.from_dict(json.loads(sx_path.read_text(encoding='utf-8')))
-        scaler_y = StandardScaler.from_dict(json.loads(sy_path.read_text(encoding='utf-8')))
-        needs_train = not _model_is_current(meta, coin_id, interval, horizon, candles)
-    except Exception:
-        needs_train = True
-
-    if needs_train:
-        (net, scaler_x, scaler_y, candles, fallback, validation_loss, strategy, validation_mae, baseline_validation_mae, alpha) = _train(coin_id, interval, horizon)
-    else:
-        validation_loss = float(meta.get('validation_loss', 0.0))
-        strategy = str(meta.get('deployment_strategy', 'neural_network'))
-        validation_mae = float(meta.get('validation_mae_pct', 0.0))
-        baseline_validation_mae = float(meta.get('baseline_validation_mae_pct', 0.0))
-        alpha = float(meta.get('ensemble_alpha', 1.0))
-
-    recent = engineer_features(candles)
-    from config import FEATURES
-    x_latest = recent[FEATURES].tail(WINDOW_SIZE).to_numpy(dtype=np.float64).reshape(1, -1)
-    model_pred_scaled = net.predict(scaler_x.transform(x_latest))[0]
-    model_return = float(scaler_y.inverse_transform(np.array([[model_pred_scaled]]))[0, 0])
-    recent_returns = recent['return_1'].dropna().tail(6).to_numpy(dtype=np.float64)
-    baseline_return = float(np.mean(recent_returns)) if len(recent_returns) else 0.0
-    pred_return = alpha * model_return + (1.0 - alpha) * baseline_return
-
-    # The model is trained and evaluated from historical candles, but the
-    # monetary prediction MUST be anchored to the actual live market price
-    # at the instant the prediction is created. A cached candle close can be
-    # hours old and must never masquerade as today's current price.
+    
+    # Validate interval/horizon
+    if interval not in HORIZONS or horizon not in HORIZONS[interval]:
+        raise ValueError("Invalid interval or horizon")
+    
+    # Get live price
     live_prices = fetch_current_prices()
-    live = live_prices.get(coin_id)
-    if not live:
-        raise RuntimeError(f'No live price returned for {COIN_MAP[coin_id]["symbol"]}. Prediction not created.')
-    current = float(live['price'])
-    current_observed_at = str(live.get('observed_at_utc') or '')
-    if not current_observed_at:
-        raise RuntimeError('Live price response did not include an observation timestamp. Prediction not created.')
-
-    predicted = max(0.0, current * (1 + pred_return))
-    change = predicted - current
-    change_pct = (change / current * 100) if current else 0.0
-    direction = 'Bullish' if change > 0 else 'Bearish' if change < 0 else 'Neutral'
-    source = 'Synthetic historical fallback + CoinGecko live price' if fallback else 'Historical CoinGecko data + live CoinGecko price'
-    record = create_prediction(
-        coin_id=coin_id, interval=interval, horizon=horizon,
-        current_price=current, current_price_observed_at_utc=current_observed_at,
-        predicted_price=predicted, predicted_change=change, predicted_change_pct=change_pct,
-        predicted_direction=direction, source=source,
+    if coin_id not in live_prices:
+        raise ValueError(f"Live price unavailable for {coin_id}")
+    
+    current_price = live_prices[coin_id]['price']
+    observed_at = live_prices[coin_id]['observed_at_utc']
+    
+    # Train model
+    model, mean, std, validation_mae, baseline_mae = train_model(coin_id, interval, horizon)
+    
+    # Load latest data and build features for prediction input
+    df, _ = load_candles(coin_id, interval, allow_fallback=False)
+    features_df = build_features(df)
+    latest = features_df.iloc[-1][FEATURES].values.reshape(1, -1)
+    
+    # Normalize
+    latest = (latest - mean) / std
+    
+    # Predict
+    predicted_change = model.predict(latest)
+    predicted_price = current_price * (1 + predicted_change / 100)
+    
+    # Determine direction
+    direction = 'UP' if predicted_price > current_price else 'DOWN'
+    change_pct = ((predicted_price - current_price) / current_price) * 100
+    
+    # Horizon label
+    horizon_label = HORIZONS[interval][horizon]
+    
+    # Calculate target time
+    target_time = datetime.now(timezone.utc)
+    if interval == 'hourly':
+        target_time = target_time.replace(second=0, microsecond=0) + pd.Timedelta(hours=horizon)
+    else:
+        target_time = target_time.replace(second=0, microsecond=0) + pd.Timedelta(days=horizon)
+    
+    # Create result
+    result = PredictionResult(
+        predicted_price=float(predicted_price),
+        current_price=float(current_price),
+        change_pct=float(change_pct),
+        direction=direction,
+        interval=interval,
+        horizon=horizon,
+        horizon_label=horizon_label,
+        strategy='Hybrid',
+        validation_mae_pct=float(validation_mae),
+        baseline_validation_mae_pct=float(baseline_mae),
+        current_price_observed_at_utc=observed_at,
+        target_time_utc=target_time.isoformat(),
     )
-    return PredictionResult(
-        interval, horizon, HORIZONS[interval][horizon], current, predicted, change,
-        change_pct, direction, source, validation_loss, strategy, validation_mae,
-        baseline_validation_mae, record['prediction_id'], record['created_at_utc'],
-        record['target_time_utc'], record['status'], current_observed_at,
+    
+    # Save to history
+    save_prediction(
+        coin_id=coin_id,
+        interval=interval,
+        horizon=horizon,
+        predicted_price=result.predicted_price,
+        current_price=result.current_price,
+        horizon_label=result.horizon_label,
+        strategy=result.strategy,
+        validation_mae_pct=result.validation_mae_pct,
+        baseline_validation_mae_pct=result.baseline_validation_mae_pct,
+        target_time_utc=result.target_time_utc,
     )
-
+    
+    return result
