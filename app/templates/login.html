@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Login · Runguard AI{% endblock %}
+{% block content %}
+<section class="page">
+  <h1>Login</h1>
+  <p class="lead">Access your private prediction history.</p>
+  {% if error %}
+  <p style="color: #f85149;">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="/login" class="auth-form">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" required>
+    
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required>
+    
+    <button type="submit" class="btn primary full">Login</button>
+  </form>
+  <p class="muted">Don't have an account? <a href="/signup">Sign up here</a></p>
+</section>
+{% endblock %}

@@ -849,3 +849,51 @@ article p {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Auth forms */
+.auth-form {
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 30px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text);
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.username {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.btn.small {
+    padding: 8px 16px;
+    font-size: 13px;
+}

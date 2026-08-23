@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function updatePrices() {
     tableBody.innerHTML = '<tr><td colspan="4">Refreshing prices...</td></tr>';
     try {
-      const response = await fetch('/api/prices');
+      const response = await fetch('/api/prices', { credentials: 'same-origin' });
       if (!response.ok) throw new Error('API Error: ' + response.status);
       const data = await response.json();
       const prices = data.prices || {};
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gainersList.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
     losersList.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
     try {
-      const response = await fetch('/api/movers');
+      const response = await fetch('/api/movers', { credentials: 'same-origin' });
       if (!response.ok) throw new Error('API Error: ' + response.status);
       const data = await response.json();
       
@@ -100,26 +100,28 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchMovers, 60000);
 });
 
-// History Page (New)
+// History Page (only if user is logged in, but we'll still include the fetch)
 document.addEventListener('DOMContentLoaded', function() {
   const tableBody = document.getElementById('history-table-body');
   if (!tableBody) return;
   
   async function fetchHistory() {
     try {
-      const response = await fetch('/api/predictions');
+      const response = await fetch('/api/predictions', { credentials: 'same-origin' });
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
       if (!response.ok) throw new Error('API Error: ' + response.status);
       const data = await response.json();
       const predictions = data.predictions || [];
       
-      // Update Summary
       const summary = data.summary || {};
       document.getElementById('summary-total').textContent = summary.total || 0;
       document.getElementById('summary-resolved').textContent = summary.resolved || 0;
       document.getElementById('summary-accuracy').textContent = summary.avg_accuracy ? summary.avg_accuracy + '%' : 'N/A';
       document.getElementById('summary-correct').textContent = summary.correct_count || 0;
       
-      // Render Table
       let html = '';
       for (const pred of predictions) {
         const created = new Date(pred.created_at_utc).toLocaleString();
@@ -160,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchHistory, 30000);
 });
 
-// Prediction form logic
+// Prediction form logic (if on predict page)
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('#predict-form');
   const horizonSelect = document.querySelector('#horizon');
@@ -207,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchLivePrice() {
     const coinId = coinSelect.value;
     try {
-      const response = await fetch(`/api/prices?coin=${coinId}`);
+      const response = await fetch(`/api/prices?coin=${coinId}`, { credentials: 'same-origin' });
       if (!response.ok) throw new Error('Failed to fetch price');
       const data = await response.json();
       const info = data.prices[coinId];
@@ -236,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchChartData(coinId) {
     status.textContent = 'Loading chart...';
     try {
-      const response = await fetch(`/api/chart/${coinId}`);
+      const response = await fetch(`/api/chart/${coinId}`, { credentials: 'same-origin' });
       if (!response.ok) throw new Error('Failed to fetch chart data');
       const data = await response.json();
       renderChart(data);
@@ -292,15 +294,15 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchChartData(coinSelect.value);
 });
 
-// Prediction result refresh
+// Prediction result refresh (if present)
 document.addEventListener('DOMContentLoaded', function() {
   const resultPanel = document.querySelector('#result[data-prediction-id]');
+  if (!resultPanel) return;
   async function refreshPredictionResult() {
-    if (!resultPanel) return;
     const id = resultPanel.dataset.predictionId;
     if (!id) return;
     try {
-      const response = await fetch(`/api/predictions/${encodeURIComponent(id)}`);
+      const response = await fetch(`/api/predictions/${encodeURIComponent(id)}`, { credentials: 'same-origin' });
       if (!response.ok) return;
       const prediction = await response.json();
       const status = document.querySelector('#prediction-status');
@@ -313,8 +315,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (_) {}
   }
-  if (resultPanel) {
-    refreshPredictionResult();
-    setInterval(refreshPredictionResult, 30000);
-  }
+  refreshPredictionResult();
+  setInterval(refreshPredictionResult, 30000);
 });
