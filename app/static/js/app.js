@@ -2,51 +2,18 @@
 (function() {
   const themeSelect = document.getElementById('theme-select');
   const root = document.documentElement;
+  
   const savedTheme = localStorage.getItem('runguard-theme') || 'dark';
   root.dataset.theme = savedTheme;
   themeSelect.value = savedTheme;
+  
   themeSelect.addEventListener('change', function() {
     root.dataset.theme = this.value;
     localStorage.setItem('runguard-theme', this.value);
   });
 })();
 
-// Live Prices Table (Market page)
-document.addEventListener('DOMContentLoaded', function() {
-  const tableBody = document.getElementById('price-table-body');
-  if (!tableBody) return;
-  
-  async function updatePrices() {
-    try {
-      const response = await fetch('/api/prices');
-      if (!response.ok) throw new Error('Failed to fetch prices');
-      const data = await response.json();
-      const prices = data.prices || {};
-      
-      let html = '';
-      for (const [coinId, info] of Object.entries(prices)) {
-        const price = Number(info.price).toLocaleString(undefined, { maximumFractionDigits: 8 });
-        const change = info.price_change_percentage_24h;
-        const changeDisplay = change !== undefined ? Number(change).toFixed(2) + '%' : 'N/A';
-        const changeClass = change >= 0 ? 'positive' : 'negative';
-        html += `<tr>
-          <td>${info.name}</td>
-          <td>${info.symbol}</td>
-          <td>$${price}</td>
-          <td class="${changeClass}">${changeDisplay}</td>
-        </tr>`;
-      }
-      tableBody.innerHTML = html;
-    } catch (error) {
-      console.error('Error updating prices:', error);
-    }
-  }
-  
-  updatePrices();
-  setInterval(updatePrices, 60000);
-});
-
-// Top Movers (Market page)
+// Top Movers (Home page)
 document.addEventListener('DOMContentLoaded', function() {
   const gainersList = document.getElementById('gainers-list');
   const losersList = document.getElementById('losers-list');
@@ -63,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <tr>
             <td>${coin.name} (${coin.symbol})</td>
             <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
-            <td class="positive">+${Number(coin.price_change_percentage_24h).toFixed(2)}%</td>
           </tr>
         `).join('');
       }
@@ -73,15 +39,15 @@ document.addEventListener('DOMContentLoaded', function() {
           <tr>
             <td>${coin.name} (${coin.symbol})</td>
             <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
-            <td class="negative">${Number(coin.price_change_percentage_24h).toFixed(2)}%</td>
           </tr>
         `).join('');
       }
     } catch (error) {
-      gainersList.innerHTML = '<tr><td colspan="3">Unable to load</td></tr>';
-      losersList.innerHTML = '<tr><td colspan="3">Unable to load</td></tr>';
+      gainersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
+      losersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
     }
   }
+  
   fetchMovers();
   setInterval(fetchMovers, 60000);
 });
@@ -110,12 +76,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     horizonSelect.dataset.value = horizonSelect.dataset.selected || '1';
     populate();
+    
     intervalButtons.forEach(btn => btn.addEventListener('click', () => {
       intervalButtons.forEach(b => b.classList.toggle('active', b === btn));
       intervalInput.value = btn.dataset.interval;
       horizonSelect.dataset.value = '1';
       populate();
     }));
+    
     horizonSelect.addEventListener('change', () => { horizonSelect.dataset.value = horizonSelect.value; });
     
     form?.addEventListener('submit', () => {
@@ -150,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchLivePrice, 60000);
 });
 
-// Chart.js implementation
+// Chart.js implementation (fixed for endless drag)
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('price-chart');
   const coinSelect = document.getElementById('chart-coin');
@@ -175,14 +143,15 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderChart(data) {
     const labels = data.labels || [];
     const prices = data.prices || [];
+    
     if (chart) chart.destroy();
     
     const ctx = canvas.getContext('2d');
+    
     const root = document.documentElement;
-    const textColor = getComputedStyle(root).getPropertyValue('--text').trim() || '#ffffff';
-    const gridColor = getComputedStyle(root).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.1)';
-    const accentColor = getComputedStyle(root).getPropertyValue('--accent').trim() || '#7c3aed';
-    const accent2 = getComputedStyle(root).getPropertyValue('--accent-2').trim() || '#06b6d4';
+    const textColor = getComputedStyle(root).getPropertyValue('--text').trim() || '#e6edf3';
+    const gridColor = getComputedStyle(root).getPropertyValue('--border').trim() || '#30363d';
+    const accentColor = getComputedStyle(root).getPropertyValue('--accent').trim() || '#58a6ff';
     
     chart = new Chart(ctx, {
       type: 'line',
@@ -192,8 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
           label: 'Price (USD)',
           data: prices,
           borderColor: accentColor,
-          backgroundColor: 'rgba(124, 58, 237, 0.1)',
-          borderWidth: 3,
+          backgroundColor: 'rgba(88, 166, 255, 0.1)',
+          borderWidth: 2,
           fill: true,
           tension: 0.4,
           pointRadius: 0,
@@ -203,19 +172,33 @@ document.addEventListener('DOMContentLoaded', function() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false,
+        animation: false, // Disable animation to prevent layout issues
         plugins: {
-          legend: { labels: { color: textColor, font: { size: 14 } } }
+          legend: {
+            labels: {
+              color: textColor,
+              font: { size: 14 }
+            }
+          }
         },
         scales: {
-          x: { ticks: { color: textColor, maxTicksLimit: 10 }, grid: { color: gridColor } },
-          y: { ticks: { color: textColor }, grid: { color: gridColor } }
+          x: {
+            ticks: { color: textColor, maxTicksLimit: 10 },
+            grid: { color: gridColor }
+          },
+          y: {
+            ticks: { color: textColor },
+            grid: { color: gridColor }
+          }
         }
       }
     });
   }
   
-  coinSelect.addEventListener('change', function() { fetchChartData(this.value); });
+  coinSelect.addEventListener('change', function() {
+    fetchChartData(this.value);
+  });
+  
   fetchChartData(coinSelect.value);
 });
 
@@ -240,6 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (_) {}
   }
+  
   if (resultPanel) {
     refreshPredictionResult();
     setInterval(refreshPredictionResult, 30000);
