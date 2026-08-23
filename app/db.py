@@ -1,7 +1,8 @@
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent.parent / 'data' / 'app.db'
+# Use the Railway volume mount point
+DB_PATH = Path('/app/data') / 'app.db'
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -9,9 +10,11 @@ def get_db():
     return conn
 
 def init_db():
+    # Ensure the volume directory exists
+    Path('/app/data').mkdir(parents=True, exist_ok=True)
+    
     conn = get_db()
     c = conn.cursor()
-    # Users table
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,7 +23,6 @@ def init_db():
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # Predictions table (add user_id)
     c.execute('''
         CREATE TABLE IF NOT EXISTS predictions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
