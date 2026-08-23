@@ -26,25 +26,6 @@ class PredictionResult:
         self.target_time_utc = target_time_utc
 
 
-class SimpleNN:
-    def __init__(self, input_size, hidden_size=32, lr=0.01):
-        # He initialization
-        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
-        self.b1 = np.zeros((1, hidden_size))
-        self.W2 = np.random.randn(hidden_size, 1) * np.sqrt(2.0 / hidden_size)
-        self.b2 = np.zeros((1, 1))
-        self.lr = lr
-
-    def forward(self, X):
-        self.z1 = X @ self.W1 + self.b1
-        self.a1 = np.maximum(0, self.z1)  # ReLU
-        self.z2 = self.a1 @ self.W2 + self.b2
-        return self.z2
-
-    def predict(self, X):
-        return self.forward(X).flatten()[0]
-
-
 def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     """Compute all features from raw OHLCV data."""
     df = df.copy()
@@ -59,7 +40,7 @@ def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _train_model(df, horizon):
-    # Build features and target, then drop NaNs ALIGNED
+    """Train a Linear Regression model (using least squares) to avoid any shape issues."""
     features_df = _engineer_features(df)
     target = df['close'].shift(-horizon).rename('target')
 
@@ -83,27 +64,17 @@ def _train_model(df, horizon):
     X_train = (X_train - mean) / std
     X_test = (X_test - mean) / std
 
-    # Train model
-    model = SimpleNN(input_size=X_train.shape[1])
-    y_train = y_train.reshape(-1, 1)  # Ensure (n, 1) shape
+    # Add bias term (column of ones)
+    X_train_b = np.c_[np.ones(X_train.shape[0]), X_train]
+    X_test_b = np.c_[np.ones(X_test.shape[0]), X_test]
 
-    for _ in range(200):
-        y_pred = model.forward(X_train)
-        dZ2 = 2 * (y_pred - y_train) / len(y_train)
-        dW2 = X_train.T @ dZ2
-        db2 = np.sum(dZ2, axis=0, keepdims=True)
-        dA1 = dZ2 @ model.W2.T
-        dZ1 = dA1 * (model.z1 > 0)
-        dW1 = X_train.T @ dZ1
-        db1 = np.sum(dZ1, axis=0, keepdims=True)
+    # Solve for weights using Least Squares (no broadcasting issues!)
+    weights, residuals, rank, s = np.linalg.lstsq(X_train_b, y_train, rcond=None)
 
-        model.W2 -= model.lr * dW2
-        model.b2 -= model.lr * db2
-        model.W1 -= model.lr * dW1
-        model.b1 -= model.lr * db1
+    # Predictions
+    y_pred_train = X_train_b @ weights
+    y_pred_test = X_test_b @ weights
 
-    # Validation
-    y_pred_test = model.forward(X_test).flatten()
     mae_pct = np.mean(np.abs((y_pred_test - y_test) / y_test)) * 100
 
     # Simple baseline
@@ -112,7 +83,7 @@ def _train_model(df, horizon):
     baseline_pred = last_price * (1 + avg_return * horizon)
     baseline_mae_pct = np.mean(np.abs((baseline_pred - y_test) / y_test)) * 100
 
-    return model, mean, std, mae_pct, baseline_mae_pct
+    return weights, mean, std, mae_pct, baseline_mae_pct
 
 
 def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
@@ -133,15 +104,16 @@ def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
         raise ValueError("No historical data")
 
     # Train model
-    model, mean, std, validation_mae, baseline_mae = _train_model(df, horizon)
+    weights, mean, std, validation_mae, baseline_mae = _train_model(df, horizon)
 
     # Prepare latest features for prediction
     latest_features = _engineer_features(df).iloc[-1].values.reshape(1, -1)
     latest_features = (latest_features - mean) / std
+    latest_features_b = np.c_[np.ones(1), latest_features]
 
     # Predict
-    predicted_change = model.predict(latest_features)
-    predicted_price = current_price * (1 + predicted_change)
+    predicted_price = latest_features_b @ weights
+    predicted_price = float(predicted_price[0])
 
     direction = 'UP' if predicted_price > current_price else 'DOWN'
     change_pct = ((predicted_price - current_price) / current_price) * 100
@@ -154,14 +126,14 @@ def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
         target_time = target_time + pd.Timedelta(days=horizon)
 
     result = PredictionResult(
-        predicted_price=float(predicted_price),
+        predicted_price=predicted_price,
         current_price=float(current_price),
         change_pct=float(change_pct),
         direction=direction,
         interval=interval,
         horizon=horizon,
         horizon_label=horizon_label,
-        strategy='SimpleNN',
+        strategy='LinearRegression',
         validation_mae_pct=float(validation_mae),
         baseline_validation_mae_pct=float(baseline_mae),
         current_price_observed_at_utc=observed_at,
