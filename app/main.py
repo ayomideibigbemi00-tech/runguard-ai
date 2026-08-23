@@ -4,12 +4,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+import asyncio
 
 from config import COIN_MAP, COINS, HORIZONS, FEATURES, WINDOW_SIZE
 from app.services.predictor import predict
 from app.services.data import load_candles, retry_queue_status, normalize_coin_id, fetch_current_prices
 from app.services.predictions import save_prediction, list_predictions, resolve_due_predictions, prediction_summary
 from app.services.backtest import walk_forward_backtest
+from app.services.background import prediction_resolver_loop
 from app.db import init_db, get_db
 from app.auth import hash_password, verify_password, create_session_token, get_current_user
 
@@ -18,10 +20,12 @@ app = FastAPI(title='Runguard AI', version='3.1.0')
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 templates = Jinja2Templates(directory=ROOT / 'templates')
 
-# Initialize database on startup
+# Initialize database and start background loop on startup
 @app.on_event("startup")
-def startup():
+async def startup():
     init_db()
+    # Start the background resolver loop
+    asyncio.create_task(prediction_resolver_loop())
 
 class PredictRequest(BaseModel):
     coin_id: str
@@ -95,6 +99,7 @@ def history_page(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url='/login', status_code=302)
+    # The background job resolves automatically; just display the latest data
     resolve_due_predictions()
     return templates.TemplateResponse(request=request, name='history.html', context={**base_context(request, user), 'page': 'history'})
 
@@ -120,7 +125,6 @@ def predict_form(request: Request, coin_id: str = Form(...), interval: str = For
         coin_id = normalize_coin_id(coin_id)
         if interval not in HORIZONS or horizon not in HORIZONS[interval]:
             raise ValueError('Invalid candle interval or prediction horizon.')
-        # Pass user['id'] to predict
         result = predict(coin_id, interval, horizon, user_id=user['id'])
         context['prediction'] = {**result.__dict__, 'coin_id': coin_id, 'coin_name': COIN_MAP[coin_id]['name'], 'symbol': COIN_MAP[coin_id]['symbol']}
     except Exception as exc:

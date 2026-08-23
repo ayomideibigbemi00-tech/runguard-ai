@@ -55,16 +55,20 @@ def list_predictions(user_id: int, limit: int = 100, status: Optional[str] = Non
         record = dict(row)
         # Convert id to prediction_id for compatibility
         record['prediction_id'] = record.pop('id')
-        # Convert created_at_utc to datetime string if needed (it's already string)
         records.append(record)
     return records
 
 
 def resolve_due_predictions(user_id: int | None = None) -> list[dict]:
-    """Resolve pending predictions whose target time has passed."""
+    """Resolve pending predictions whose target time has passed.
+    
+    Uses live price first, but falls back to the last known historical price
+    if the live API is unavailable (e.g. rate limited).
+    """
     conn = get_db()
     now = datetime.now(timezone.utc)
-    # Get pending predictions for user
+    
+    # Get pending predictions
     if user_id:
         rows = conn.execute("SELECT * FROM predictions WHERE user_id = ? AND status = 'pending'", (user_id,)).fetchall()
     else:
@@ -75,24 +79,40 @@ def resolve_due_predictions(user_id: int | None = None) -> list[dict]:
         target_time = row['target_time_utc']
         if not target_time:
             continue
+        
         try:
             target_dt = datetime.fromisoformat(target_time.replace('Z', '+00:00'))
         except ValueError:
             continue
+
         if now < target_dt:
-            continue
-        # Fetch actual price
+            continue  # Still pending
+
+        actual_price = None
+        # 1. Try live price (which can fail if rate limited)
         try:
             from app.services.data import fetch_current_prices
             prices = fetch_current_prices()
             actual_price = prices.get(row['coin_id'], {}).get('price')
         except Exception:
             actual_price = None
+        
+        # 2. Fallback to historical data if live price failed
+        if actual_price is None:
+            try:
+                from app.services.data import load_candles
+                df, fallback = load_candles(row['coin_id'], row['interval'], allow_fallback=True)
+                if df is not None and not df.empty:
+                    actual_price = float(df['close'].iloc[-1])
+            except Exception:
+                actual_price = None
+
         if actual_price:
             predicted = row['predicted_price']
             abs_error = abs(predicted - actual_price)
             accuracy = max(0.0, 100.0 - (abs_error / actual_price * 100.0))
-            direction_correct = (predicted > actual_price) == (row['current_price'] < actual_price)
+            direction_correct = (predicted > row['current_price']) == (actual_price > row['current_price'])
+            
             conn.execute('''
                 UPDATE predictions
                 SET status = 'resolved', actual_price = ?, absolute_error = ?, percentage_accuracy = ?, direction_correct = ?

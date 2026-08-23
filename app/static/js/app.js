@@ -100,7 +100,42 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchMovers, 60000);
 });
 
-// History Page (only if user is logged in, but we'll still include the fetch)
+// Countdown function
+function startCountdown(targetTimeStr, elementId) {
+  const targetTime = new Date(targetTimeStr).getTime();
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  function update() {
+    const now = Date.now();
+    const diff = targetTime - now;
+    if (diff <= 0) {
+      element.textContent = "Expired";
+      clearInterval(interval);
+      // Optionally refresh the page or re-fetch status
+      return;
+    }
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    element.textContent = `${hours}h ${minutes}m ${seconds}s`;
+  }
+  update();
+  const interval = setInterval(update, 1000);
+}
+
+// Start countdown on prediction result page
+document.addEventListener('DOMContentLoaded', function() {
+  const targetTimeEl = document.getElementById('target-time');
+  if (targetTimeEl) {
+    const targetTimeStr = targetTimeEl.textContent.trim();
+    if (targetTimeStr) {
+      startCountdown(targetTimeStr, 'countdown-timer');
+    }
+  }
+});
+
+// History page: attach countdown to pending predictions
 document.addEventListener('DOMContentLoaded', function() {
   const tableBody = document.getElementById('history-table-body');
   if (!tableBody) return;
@@ -133,6 +168,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const accuracy = pred.percentage_accuracy !== null && pred.percentage_accuracy !== undefined ? `<span class="positive">${pred.percentage_accuracy.toFixed(2)}%</span>` : '---';
         const direction = pred.direction_correct === true ? '<span class="positive">Correct</span>' : (pred.direction_correct === false ? '<span class="negative">Wrong</span>' : 'Pending');
         const statusClass = pred.status === 'resolved' ? 'positive' : 'muted';
+        // Show countdown if pending and target time exists
+        let statusHtml = '';
+        if (pred.status === 'pending' && pred.target_time_utc) {
+          statusHtml = `<span class="${statusClass}" data-target-time="${pred.target_time_utc}" data-id="${pred.prediction_id}">${pred.status}</span>`;
+        } else {
+          statusHtml = `<span class="${statusClass}">${pred.status}</span>`;
+        }
         
         html += `<tr>
           <td>${created}</td>
@@ -143,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <td>${actual}</td>
           <td>${accuracy}</td>
           <td>${direction}</td>
-          <td class="${statusClass}">${pred.status}</td>
+          <td>${statusHtml}</td>
         </tr>`;
       }
       
@@ -152,6 +194,27 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         tableBody.innerHTML = html;
       }
+      
+      // Attach countdown intervals for each pending prediction
+      document.querySelectorAll('[data-target-time]').forEach(function(el) {
+        const targetTime = el.getAttribute('data-target-time');
+        const id = el.getAttribute('data-id');
+        const span = el;
+        const interval = setInterval(function() {
+          const diff = new Date(targetTime) - Date.now();
+          if (diff <= 0) {
+            span.textContent = 'Expired';
+            span.className = 'positive';
+            clearInterval(interval);
+          } else {
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            span.textContent = `${h}h ${m}m ${s}s`;
+          }
+        }, 1000);
+      });
+      
     } catch (error) {
       console.error('Error fetching history:', error);
       tableBody.innerHTML = '<tr><td colspan="9" style="color: #ef4444;">Unable to load history.</td></tr>';
@@ -159,10 +222,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   fetchHistory();
-  setInterval(fetchHistory, 30000);
+  setInterval(fetchHistory, 30000); // refresh every 30 seconds to update status
 });
 
-// Prediction form logic (if on predict page)
+// Prediction form logic
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('#predict-form');
   const horizonSelect = document.querySelector('#horizon');
@@ -294,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchChartData(coinSelect.value);
 });
 
-// Prediction result refresh (if present)
+// Prediction result refresh
 document.addEventListener('DOMContentLoaded', function() {
   const resultPanel = document.querySelector('#result[data-prediction-id]');
   if (!resultPanel) return;
@@ -312,6 +375,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (prediction.status === 'resolved') {
         if (actual) actual.textContent = `$${Number(prediction.actual_price).toLocaleString(undefined, {maximumFractionDigits: 8})}`;
         if (result) result.textContent = prediction.direction_correct ? 'CORRECT ✓' : 'WRONG ✗';
+        // Clear countdown if resolved
+        const countdownEl = document.getElementById('countdown-timer');
+        if (countdownEl) countdownEl.textContent = 'Expired';
       }
     } catch (_) {}
   }
