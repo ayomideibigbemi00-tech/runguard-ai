@@ -18,18 +18,15 @@ app = FastAPI(title='Runguard AI', version='3.1.0')
 app.mount('/static', StaticFiles(directory=ROOT / 'static'), name='static')
 templates = Jinja2Templates(directory=ROOT / 'templates')
 
-
 # Initialize database on startup
 @app.on_event("startup")
 def startup():
     init_db()
 
-
 class PredictRequest(BaseModel):
     coin_id: str
     interval: str
     horizon: int
-
 
 def base_context(request: Request, user=None):
     return {
@@ -39,12 +36,10 @@ def base_context(request: Request, user=None):
         'user': user,
     }
 
-
 # Auth pages
 @app.get('/signup', response_class=HTMLResponse)
 def signup_page(request: Request):
     return templates.TemplateResponse(request=request, name='signup.html', context=base_context(request))
-
 
 @app.post('/signup')
 def signup(request: Request, username: str = Form(...), password: str = Form(...)):
@@ -63,11 +58,9 @@ def signup(request: Request, username: str = Form(...), password: str = Form(...
     response.set_cookie("session", token, httponly=True, max_age=86400)
     return response
 
-
 @app.get('/login', response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(request=request, name='login.html', context=base_context(request))
-
 
 @app.post('/login')
 def login(request: Request, username: str = Form(...), password: str = Form(...)):
@@ -81,25 +74,21 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
     response.set_cookie("session", token, httponly=True, max_age=86400)
     return response
 
-
 @app.get('/logout')
 def logout():
     response = RedirectResponse(url='/', status_code=302)
     response.delete_cookie("session")
     return response
 
-
 @app.get('/', response_class=HTMLResponse)
 def home(request: Request):
     user = get_current_user(request)
     return templates.TemplateResponse(request=request, name='index.html', context={**base_context(request, user), 'page': 'home'})
 
-
 @app.get('/market', response_class=HTMLResponse)
 def market_page(request: Request):
     user = get_current_user(request)
     return templates.TemplateResponse(request=request, name='market.html', context={**base_context(request, user), 'page': 'market'})
-
 
 @app.get('/history', response_class=HTMLResponse)
 def history_page(request: Request):
@@ -109,12 +98,10 @@ def history_page(request: Request):
     resolve_due_predictions()
     return templates.TemplateResponse(request=request, name='history.html', context={**base_context(request, user), 'page': 'history'})
 
-
 @app.get('/charts', response_class=HTMLResponse)
 def charts_page(request: Request):
     user = get_current_user(request)
     return templates.TemplateResponse(request=request, name='charts.html', context={**base_context(request, user), 'page': 'charts'})
-
 
 @app.get('/predict', response_class=HTMLResponse)
 def predict_page(request: Request):
@@ -122,7 +109,6 @@ def predict_page(request: Request):
     if not user:
         return RedirectResponse(url='/login', status_code=302)
     return templates.TemplateResponse(request=request, name='prediction.html', context={**base_context(request, user), 'page': 'predict', 'horizons': HORIZONS, 'selected_coin': 'bitcoin', 'selected_interval': 'hourly', 'selected_horizon': 1})
-
 
 @app.post('/predict', response_class=HTMLResponse)
 def predict_form(request: Request, coin_id: str = Form(...), interval: str = Form(...), horizon: int = Form(...)):
@@ -134,38 +120,22 @@ def predict_form(request: Request, coin_id: str = Form(...), interval: str = For
         coin_id = normalize_coin_id(coin_id)
         if interval not in HORIZONS or horizon not in HORIZONS[interval]:
             raise ValueError('Invalid candle interval or prediction horizon.')
-        result = predict(coin_id, interval, horizon)
-        # Save to history with user_id
-        save_prediction(
-            user_id=user['id'],
-            coin_id=coin_id,
-            interval=interval,
-            horizon=horizon,
-            predicted_price=result.predicted_price,
-            current_price=result.current_price,
-            horizon_label=result.horizon_label,
-            strategy=result.strategy,
-            validation_mae_pct=result.validation_mae_pct,
-            baseline_validation_mae_pct=result.baseline_validation_mae_pct,
-            target_time_utc=result.target_time_utc
-        )
+        # Pass user['id'] to predict
+        result = predict(coin_id, interval, horizon, user_id=user['id'])
         context['prediction'] = {**result.__dict__, 'coin_id': coin_id, 'coin_name': COIN_MAP[coin_id]['name'], 'symbol': COIN_MAP[coin_id]['symbol']}
     except Exception as exc:
         context['prediction_error'] = str(exc)
     return templates.TemplateResponse(request=request, name='prediction.html', context=context)
-
 
 @app.get('/about', response_class=HTMLResponse)
 def about_page(request: Request):
     user = get_current_user(request)
     return templates.TemplateResponse(request=request, name='about.html', context={**base_context(request, user), 'page': 'about'})
 
-
-# API endpoints (same as before, but use user_id for predictions)
+# API endpoints
 @app.get('/api/coins')
 def api_coins():
     return {'coins': COINS, 'count': len(COINS)}
-
 
 @app.post('/api/predict')
 def api_predict(payload: PredictRequest, request: Request):
@@ -179,20 +149,7 @@ def api_predict(payload: PredictRequest, request: Request):
     if payload.interval not in HORIZONS or payload.horizon not in HORIZONS[payload.interval]:
         raise HTTPException(status_code=400, detail='Invalid interval or horizon.')
     try:
-        result = predict(coin_id, payload.interval, payload.horizon)
-        save_prediction(
-            user_id=user['id'],
-            coin_id=coin_id,
-            interval=payload.interval,
-            horizon=payload.horizon,
-            predicted_price=result.predicted_price,
-            current_price=result.current_price,
-            horizon_label=result.horizon_label,
-            strategy=result.strategy,
-            validation_mae_pct=result.validation_mae_pct,
-            baseline_validation_mae_pct=result.baseline_validation_mae_pct,
-            target_time_utc=result.target_time_utc
-        )
+        result = predict(coin_id, payload.interval, payload.horizon, user_id=user['id'])
         data = result.__dict__
         data['coin_id'] = coin_id
         data['coin_name'] = COIN_MAP[coin_id]['name']
@@ -200,7 +157,6 @@ def api_predict(payload: PredictRequest, request: Request):
         return data
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
 
 @app.post('/api/backtest')
 def api_backtest(payload: PredictRequest, request: Request):
@@ -218,7 +174,6 @@ def api_backtest(payload: PredictRequest, request: Request):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-
 @app.get('/api/predictions')
 def api_predictions(request: Request, limit: int = 100, status: str | None = None, coin_id: str | None = None):
     user = get_current_user(request)
@@ -231,14 +186,12 @@ def api_predictions(request: Request, limit: int = 100, status: str | None = Non
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-
 @app.get('/api/predictions/summary')
 def api_predictions_summary(request: Request):
     user = get_current_user(request)
     if not user:
         raise HTTPException(status_code=401, detail='Authentication required')
     return prediction_summary(user_id=user['id'])
-
 
 @app.get('/api/predictions/{prediction_id}')
 def api_prediction(prediction_id: str, request: Request):
@@ -248,15 +201,13 @@ def api_prediction(prediction_id: str, request: Request):
     resolve_due_predictions()
     records = list_predictions(user_id=user['id'], limit=500)
     for record in records:
-        if record.get('prediction_id') == prediction_id:
+        if str(record.get('prediction_id')) == prediction_id:
             return record
     raise HTTPException(status_code=404, detail='Prediction not found.')
-
 
 @app.get('/api/data-queue')
 def api_data_queue():
     return retry_queue_status()
-
 
 @app.get('/api/prices')
 def api_prices(coin: str | None = None):
@@ -272,7 +223,6 @@ def api_prices(coin: str | None = None):
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-
 @app.get('/api/chart/{coin_id}')
 def api_chart(coin_id: str):
     try:
@@ -284,7 +234,6 @@ def api_chart(coin_id: str):
         return {'labels': labels, 'prices': prices, 'coin_id': coin_id, 'source': 'synthetic' if fallback else 'coingecko'}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
 
 @app.get('/api/movers')
 def api_movers():
@@ -302,7 +251,6 @@ def api_movers():
         return {'gainers': gainers, 'losers': losers}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-
 
 @app.get('/api/status')
 def api_status():

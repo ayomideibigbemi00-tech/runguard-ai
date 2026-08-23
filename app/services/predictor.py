@@ -40,11 +40,9 @@ def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _train_model(df, horizon):
-    """Train a Linear Regression model (using least squares) to avoid any shape issues."""
     features_df = _engineer_features(df)
     target = df['close'].shift(-horizon).rename('target')
 
-    # Combine into one dataframe to ensure perfectly aligned rows
     combined = pd.concat([features_df, target], axis=1)
     combined = combined.dropna()
 
@@ -58,26 +56,22 @@ def _train_model(df, horizon):
     X_train, X_test = X[:split], X[split:]
     y_train, y_test = y[:split], y[split:]
 
-    # Normalize
     mean = X_train.mean(axis=0)
     std = X_train.std(axis=0) + 1e-8
     X_train = (X_train - mean) / std
     X_test = (X_test - mean) / std
 
-    # Add bias term (column of ones)
+    # Add bias term
     X_train_b = np.c_[np.ones(X_train.shape[0]), X_train]
     X_test_b = np.c_[np.ones(X_test.shape[0]), X_test]
 
-    # Solve for weights using Least Squares (no broadcasting issues!)
-    weights, residuals, rank, s = np.linalg.lstsq(X_train_b, y_train, rcond=None)
+    weights, _, _, _ = np.linalg.lstsq(X_train_b, y_train, rcond=None)
 
-    # Predictions
     y_pred_train = X_train_b @ weights
     y_pred_test = X_test_b @ weights
 
     mae_pct = np.mean(np.abs((y_pred_test - y_test) / y_test)) * 100
 
-    # Simple baseline
     last_price = y_train[-1]
     avg_return = np.mean(np.diff(y_train) / y_train[:-1]) if len(y_train) > 1 else 0
     baseline_pred = last_price * (1 + avg_return * horizon)
@@ -86,34 +80,29 @@ def _train_model(df, horizon):
     return weights, mean, std, mae_pct, baseline_mae_pct
 
 
-def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
+def predict(coin_id: str, interval: str, horizon: int, user_id: int) -> PredictionResult:
+    """Make a prediction and save it to the user's history."""
     coin_id = normalize_coin_id(coin_id)
     if interval not in HORIZONS or horizon not in HORIZONS[interval]:
         raise ValueError("Invalid interval or horizon")
 
-    # Get live price
     live_prices = fetch_current_prices()
     if coin_id not in live_prices:
         raise ValueError("Live price unavailable")
     current_price = live_prices[coin_id]['price']
     observed_at = live_prices[coin_id]['observed_at_utc']
 
-    # Load historical data
     df, fallback = load_candles(coin_id, interval, allow_fallback=False)
     if df is None or df.empty:
         raise ValueError("No historical data")
 
-    # Train model
     weights, mean, std, validation_mae, baseline_mae = _train_model(df, horizon)
 
-    # Prepare latest features for prediction
     latest_features = _engineer_features(df).iloc[-1].values.reshape(1, -1)
     latest_features = (latest_features - mean) / std
     latest_features_b = np.c_[np.ones(1), latest_features]
 
-    # Predict
-    predicted_price = latest_features_b @ weights
-    predicted_price = float(predicted_price[0])
+    predicted_price = float((latest_features_b @ weights)[0])
 
     direction = 'UP' if predicted_price > current_price else 'DOWN'
     change_pct = ((predicted_price - current_price) / current_price) * 100
@@ -140,8 +129,9 @@ def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
         target_time_utc=target_time.isoformat(),
     )
 
-    # Save to history
+    # Save to history with user_id
     save_prediction(
+        user_id=user_id,
         coin_id=coin_id,
         interval=interval,
         horizon=horizon,
