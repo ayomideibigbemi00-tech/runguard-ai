@@ -117,8 +117,8 @@ h1, h2, h3, .brand-logo { font-family: 'Space Grotesk', sans-serif; }
 /* ===== LIVE PRICES ===== */
 .live-prices { padding: 80px 0; max-width: 1200px; margin: 0 auto; }
 .live-prices h2 { font-size: 36px; margin-bottom: 8px; }
-.table-wrapper { margin-top: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; background: var(--panel); backdrop-filter: blur(12px); box-shadow: var(--shadow); }
-.price-table { width: 100%; border-collapse: collapse; }
+.table-wrapper { margin-top: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow-x: auto; overflow-y: hidden; background: var(--panel); backdrop-filter: blur(12px); box-shadow: var(--shadow); }
+.price-table { width: 100%; min-width: 480px; border-collapse: collapse; }
 .price-table th { background: var(--bg-secondary); padding: 16px; text-align: left; font-size: 13px; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
 .price-table td { padding: 20px; border-bottom: 1px solid var(--border); font-size: 16px; }
 .price-table tr:hover { background: var(--panel-hover); }
@@ -214,4 +214,10 @@ article p { color: var(--text-secondary); font-size: 16px; }
   .stats { grid-template-columns: 1fr; }
   .result h2 { font-size: 36px; }
   .prediction-clock { grid-template-columns: 1fr; }
+
+  .live-prices, .movers { padding: 40px 0; }
+  .live-prices h2, .movers h2 { font-size: 26px; }
+  .price-table th, .price-table td { padding: 12px 10px; font-size: 13px; }
+  .movers-table th, .movers-table td { padding: 10px 8px; font-size: 13px; }
+  .movers-table { min-width: 280px; }
 }
