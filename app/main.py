@@ -147,7 +147,6 @@ def api_prediction(prediction_id: str):
 
 @app.get('/api/data-queue')
 def api_data_queue():
-    """Show persisted CoinGecko jobs waiting for retry."""
     return retry_queue_status()
 
 
@@ -181,21 +180,17 @@ def api_chart(coin_id: str):
 
 @app.get('/api/movers')
 def api_movers():
-    """Get top 5 gainers and losers based on 24h change."""
     try:
         prices = fetch_current_prices()
         if not prices:
             return {'gainers': [], 'losers': []}
-        
         coin_list = list(prices.values())
         sorted_by_change = sorted(coin_list, key=lambda x: x.get('price_change_percentage_24h', 0), reverse=True)
         gainers = sorted_by_change[:5]
         losers = sorted_by_change[-5:]
-        
         id_map = {v['symbol']: k for k, v in prices.items()}
         gainers = [{**coin, 'id': id_map.get(coin['symbol'], '')} for coin in gainers]
         losers = [{**coin, 'id': id_map.get(coin['symbol'], '')} for coin in losers]
-        
         return {'gainers': gainers, 'losers': losers}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

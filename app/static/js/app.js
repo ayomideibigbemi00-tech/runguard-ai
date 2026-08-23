@@ -2,27 +2,69 @@
 (function() {
   const themeSelect = document.getElementById('theme-select');
   const root = document.documentElement;
-  
   const savedTheme = localStorage.getItem('runguard-theme') || 'dark';
   root.dataset.theme = savedTheme;
   themeSelect.value = savedTheme;
-  
   themeSelect.addEventListener('change', function() {
     root.dataset.theme = this.value;
     localStorage.setItem('runguard-theme', this.value);
   });
 })();
 
-// Top Movers (Home page)
+// Live Prices Table (Market page)
+document.addEventListener('DOMContentLoaded', function() {
+  const tableBody = document.getElementById('price-table-body');
+  if (!tableBody) return;
+  
+  async function updatePrices() {
+    tableBody.innerHTML = '<tr><td colspan="4">Refreshing prices...</td></tr>';
+    try {
+      const response = await fetch('/api/prices');
+      if (!response.ok) throw new Error('API Error: ' + response.status);
+      const data = await response.json();
+      const prices = data.prices || {};
+      
+      let html = '';
+      for (const [coinId, info] of Object.entries(prices)) {
+        const price = Number(info.price).toLocaleString(undefined, { maximumFractionDigits: 8 });
+        const change = info.price_change_percentage_24h;
+        const changeDisplay = change !== undefined ? Number(change).toFixed(2) + '%' : 'N/A';
+        const changeClass = change >= 0 ? 'positive' : 'negative';
+        html += `<tr>
+          <td>${info.name}</td>
+          <td>${info.symbol}</td>
+          <td>$${price}</td>
+          <td class="${changeClass}">${changeDisplay}</td>
+        </tr>`;
+      }
+      
+      if (html === '') {
+        tableBody.innerHTML = '<tr><td colspan="4">No coin data available.</td></tr>';
+      } else {
+        tableBody.innerHTML = html;
+      }
+    } catch (error) {
+      console.error('Error updating prices:', error);
+      tableBody.innerHTML = '<tr><td colspan="4" style="color: #ef4444;">Unable to load prices. Please refresh.</td></tr>';
+    }
+  }
+  
+  updatePrices();
+  setInterval(updatePrices, 60000);
+});
+
+// Top Movers (Market page)
 document.addEventListener('DOMContentLoaded', function() {
   const gainersList = document.getElementById('gainers-list');
   const losersList = document.getElementById('losers-list');
   if (!gainersList || !losersList) return;
   
   async function fetchMovers() {
+    gainersList.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+    losersList.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
     try {
       const response = await fetch('/api/movers');
-      if (!response.ok) throw new Error('Failed to fetch movers');
+      if (!response.ok) throw new Error('API Error: ' + response.status);
       const data = await response.json();
       
       if (data.gainers && data.gainers.length > 0) {
@@ -30,8 +72,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <tr>
             <td>${coin.name} (${coin.symbol})</td>
             <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
+            <td class="positive">+${Number(coin.price_change_percentage_24h).toFixed(2)}%</td>
           </tr>
         `).join('');
+      } else {
+        gainersList.innerHTML = '<tr><td colspan="3">No gainers data.</td></tr>';
       }
       
       if (data.losers && data.losers.length > 0) {
@@ -39,15 +84,18 @@ document.addEventListener('DOMContentLoaded', function() {
           <tr>
             <td>${coin.name} (${coin.symbol})</td>
             <td>$${Number(coin.price).toLocaleString(undefined, {maximumFractionDigits: 8})}</td>
+            <td class="negative">${Number(coin.price_change_percentage_24h).toFixed(2)}%</td>
           </tr>
         `).join('');
+      } else {
+        losersList.innerHTML = '<tr><td colspan="3">No losers data.</td></tr>';
       }
     } catch (error) {
-      gainersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
-      losersList.innerHTML = '<tr><td colspan="2" class="muted">Unable to load</td></tr>';
+      console.error('Error fetching movers:', error);
+      gainersList.innerHTML = '<tr><td colspan="3" style="color: #ef4444;">Unable to load movers.</td></tr>';
+      losersList.innerHTML = '<tr><td colspan="3" style="color: #ef4444;">Unable to load movers.</td></tr>';
     }
   }
-  
   fetchMovers();
   setInterval(fetchMovers, 60000);
 });
@@ -76,14 +124,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     horizonSelect.dataset.value = horizonSelect.dataset.selected || '1';
     populate();
-    
     intervalButtons.forEach(btn => btn.addEventListener('click', () => {
       intervalButtons.forEach(b => b.classList.toggle('active', b === btn));
       intervalInput.value = btn.dataset.interval;
       horizonSelect.dataset.value = '1';
       populate();
     }));
-    
     horizonSelect.addEventListener('change', () => { horizonSelect.dataset.value = horizonSelect.value; });
     
     form?.addEventListener('submit', () => {
@@ -118,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchLivePrice, 60000);
 });
 
-// Chart.js implementation (fixed for endless drag)
+// Chart.js implementation
 document.addEventListener('DOMContentLoaded', function() {
   const canvas = document.getElementById('price-chart');
   const coinSelect = document.getElementById('chart-coin');
@@ -143,11 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderChart(data) {
     const labels = data.labels || [];
     const prices = data.prices || [];
-    
     if (chart) chart.destroy();
     
     const ctx = canvas.getContext('2d');
-    
     const root = document.documentElement;
     const textColor = getComputedStyle(root).getPropertyValue('--text').trim() || '#e6edf3';
     const gridColor = getComputedStyle(root).getPropertyValue('--border').trim() || '#30363d';
@@ -172,33 +216,19 @@ document.addEventListener('DOMContentLoaded', function() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false, // Disable animation to prevent layout issues
+        animation: false,
         plugins: {
-          legend: {
-            labels: {
-              color: textColor,
-              font: { size: 14 }
-            }
-          }
+          legend: { labels: { color: textColor, font: { size: 14 } } }
         },
         scales: {
-          x: {
-            ticks: { color: textColor, maxTicksLimit: 10 },
-            grid: { color: gridColor }
-          },
-          y: {
-            ticks: { color: textColor },
-            grid: { color: gridColor }
-          }
+          x: { ticks: { color: textColor, maxTicksLimit: 10 }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor }, grid: { color: gridColor } }
         }
       }
     });
   }
   
-  coinSelect.addEventListener('change', function() {
-    fetchChartData(this.value);
-  });
-  
+  coinSelect.addEventListener('change', function() { fetchChartData(this.value); });
   fetchChartData(coinSelect.value);
 });
 
@@ -223,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (_) {}
   }
-  
   if (resultPanel) {
     refreshPredictionResult();
     setInterval(refreshPredictionResult, 30000);

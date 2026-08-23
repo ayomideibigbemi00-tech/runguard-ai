@@ -27,11 +27,10 @@ from config import (
 )
 from app.services.live_prices import record_price_snapshot
 
-# In-memory cache for live prices
 _LIVE_PRICE_CACHE = {}
 _LIVE_PRICE_CACHE_LOCK = threading.Lock()
 _LIVE_PRICE_CACHE_TIMESTAMP = 0
-_LIVE_PRICE_CACHE_TTL = 60  # seconds
+_LIVE_PRICE_CACHE_TTL = 60
 
 DEFAULT_REQUESTS_PER_MINUTE = 30
 REQUESTS_PER_MINUTE = max(1, int(os.getenv('COINGECKO_REQUESTS_PER_MINUTE', str(DEFAULT_REQUESTS_PER_MINUTE))))
@@ -47,19 +46,17 @@ _REQUEST_TIMESTAMPS: deque[float] = deque()
 
 
 class RateLimitError(RuntimeError):
-    """Raised when CoinGecko continues to reject a request after safe retries."""
-
     def __init__(self, message: str, *, retry_after: float | None = None):
         super().__init__(message)
         self.retry_after = retry_after
 
 
 class RetryableCoinGeckoError(RuntimeError):
-    """A transient request error that should be put back into a retry queue."""
+    pass
 
 
 class PermanentCoinGeckoError(RuntimeError):
-    """A non-retryable CoinGecko error."""
+    pass
 
 
 COIN_ALIASES = {
@@ -120,7 +117,6 @@ def _save_rate_state(values: list[float]) -> None:
 
 
 def _rate_limit_wait(extra_delay: float = 0.0) -> None:
-    """Enforce a sliding-window RPM limit for every request, including retries."""
     with _RATE_LOCK:
         persisted = _load_rate_state()
         if not _REQUEST_TIMESTAMPS:
@@ -239,13 +235,11 @@ def _fetch_market_chart(coin_id: str, interval: str, days: int) -> pd.DataFrame:
             raise PermanentCoinGeckoError(f'CoinGecko HTTP {exc.code} for {coin_id}/{interval}.') from exc
         if exc.code == 429:
             raise RateLimitError(
-                f'CoinGecko HTTP 429 for {coin_id}/{interval}. '
-                'The job has been persisted for later retry.',
+                f'CoinGecko HTTP 429 for {coin_id}/{interval}. The job has been persisted for later retry.',
                 retry_after=retry_after,
             ) from exc
         raise RetryableCoinGeckoError(
-            f'CoinGecko transient HTTP {exc.code} for {coin_id}/{interval}. '
-            'The job has been persisted for later retry.'
+            f'CoinGecko transient HTTP {exc.code} for {coin_id}/{interval}. The job has been persisted for later retry.'
         ) from exc
     except (URLError, TimeoutError) as exc:
         raise RetryableCoinGeckoError(

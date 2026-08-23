@@ -6,44 +6,44 @@
   <h1>How Runguard AI Works</h1>
   <p class="lead">A deep dive into the neural network, data pipeline, and prediction engine.</p>
 
-  <div class="about-grid">
-    <div class="panel about-card">
+  <div class="grid two">
+    <article>
       <div class="icon">🧠</div>
       <h3>Neural Network</h3>
       <p>Our model is a feedforward neural network built from scratch with NumPy.</p>
-      <ul class="feature-list">
+      <ul>
         <li><strong>Input Layer:</strong> 12 features</li>
         <li><strong>Hidden Layers:</strong> 32 neurons with ReLU</li>
         <li><strong>Output Layer:</strong> 1 neuron</li>
         <li><strong>Loss Function:</strong> MSE</li>
         <li><strong>Optimizer:</strong> Gradient Descent</li>
       </ul>
-    </div>
+    </article>
 
-    <div class="panel about-card">
+    <article>
       <div class="icon">📊</div>
       <h3>Feature Engineering</h3>
       <p>Raw price data transformed into meaningful features.</p>
-      <ul class="feature-list">
+      <ul>
         <li><strong>OHLCV:</strong> Open, High, Low, Close, Volume</li>
         <li><strong>Returns:</strong> 1, 3, 6-period returns</li>
         <li><strong>Moving Averages:</strong> SMA-7, SMA-20</li>
         <li><strong>Volatility:</strong> 7-period volatility</li>
         <li><strong>Range:</strong> High-Low percentage</li>
       </ul>
-    </div>
+    </article>
 
-    <div class="panel about-card">
+    <article>
       <div class="icon">🔄</div>
       <h3>Ensemble Strategy</h3>
       <p>Compares neural net against simple baseline and picks the better one on validation.</p>
-    </div>
+    </article>
 
-    <div class="panel about-card">
+    <article>
       <div class="icon">⚡</div>
       <h3>Live Anchoring</h3>
       <p>Predictions anchored to actual live CoinGecko price at prediction time.</p>
-    </div>
+    </article>
   </div>
 
   <div class="panel" style="margin-top: 40px;">
