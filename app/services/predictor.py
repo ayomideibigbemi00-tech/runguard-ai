@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 
-from config import CACHE_DIR, COIN_MAP, WINDOW_SIZE, FEATURES, HORIZONS
+from config import FEATURES, HORIZONS
 from app.services.data import load_candles, fetch_current_prices, normalize_coin_id
 from app.services.predictions import save_prediction
 
@@ -26,8 +26,27 @@ class PredictionResult:
         self.target_time_utc = target_time_utc
 
 
+class SimpleNN:
+    def __init__(self, input_size, hidden_size=32, lr=0.01):
+        # He initialization
+        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
+        self.b1 = np.zeros((1, hidden_size))
+        self.W2 = np.random.randn(hidden_size, 1) * np.sqrt(2.0 / hidden_size)
+        self.b2 = np.zeros((1, 1))
+        self.lr = lr
+
+    def forward(self, X):
+        self.z1 = X @ self.W1 + self.b1
+        self.a1 = np.maximum(0, self.z1)  # ReLU
+        self.z2 = self.a1 @ self.W2 + self.b2
+        return self.z2
+
+    def predict(self, X):
+        return self.forward(X).flatten()[0]
+
+
 def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute all features from raw OHLCV data (no external feature module)."""
+    """Compute all features from raw OHLCV data."""
     df = df.copy()
     df['return_1'] = df['close'].pct_change(1)
     df['return_3'] = df['close'].pct_change(3)
@@ -36,55 +55,41 @@ def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df['sma_20'] = df['close'].rolling(window=20).mean()
     df['volatility_7'] = df['close'].pct_change().rolling(window=7).std()
     df['range_pct'] = (df['high'] - df['low']) / df['close']
-    # Keep only the specified features, drop NaNs
     return df[FEATURES]
 
 
-class SimpleNN:
-    def __init__(self, input_size, hidden_size=32, lr=0.01):
-        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2 / input_size)
-        self.b1 = np.zeros((1, hidden_size))
-        self.W2 = np.random.randn(hidden_size, 1) * np.sqrt(2 / hidden_size)
-        self.b2 = np.zeros((1, 1))
-        self.lr = lr
-
-    def forward(self, X):
-        self.z1 = X @ self.W1 + self.b1
-        self.a1 = np.maximum(0, self.z1)
-        self.z2 = self.a1 @ self.W2 + self.b2
-        return self.z2
-
-    def predict(self, X):
-        return self.forward(X).flatten()[0]
-
-
 def _train_model(df, horizon):
-    """Train a simple model on the given dataframe and horizon."""
-    features = _engineer_features(df)
-    X = features.values
-    y = df['close'].shift(-horizon).values
+    # Build features and target, then drop NaNs ALIGNED
+    features_df = _engineer_features(df)
+    target = df['close'].shift(-horizon).rename('target')
 
-    # Drop rows with NaN
-    mask = ~np.isnan(y) & ~np.isnan(X).any(axis=1)
-    X = X[mask]
-    y = y[mask]
+    # Combine into one dataframe to ensure perfectly aligned rows
+    combined = pd.concat([features_df, target], axis=1)
+    combined = combined.dropna()
 
-    if len(X) < WINDOW_SIZE:
+    X = combined[FEATURES].values
+    y = combined['target'].values
+
+    if len(X) < 30:
         raise ValueError("Not enough data")
 
     split = int(len(X) * 0.8)
     X_train, X_test = X[:split], X[split:]
     y_train, y_test = y[:split], y[split:]
 
+    # Normalize
     mean = X_train.mean(axis=0)
     std = X_train.std(axis=0) + 1e-8
     X_train = (X_train - mean) / std
     X_test = (X_test - mean) / std
 
+    # Train model
     model = SimpleNN(input_size=X_train.shape[1])
+    y_train = y_train.reshape(-1, 1)  # Ensure (n, 1) shape
+
     for _ in range(200):
         y_pred = model.forward(X_train)
-        dZ2 = 2 * (y_pred - y_train.reshape(-1, 1)) / len(y_train)
+        dZ2 = 2 * (y_pred - y_train) / len(y_train)
         dW2 = X_train.T @ dZ2
         db2 = np.sum(dZ2, axis=0, keepdims=True)
         dA1 = dZ2 @ model.W2.T
@@ -101,9 +106,9 @@ def _train_model(df, horizon):
     y_pred_test = model.forward(X_test).flatten()
     mae_pct = np.mean(np.abs((y_pred_test - y_test) / y_test)) * 100
 
-    # Simple baseline: last observed price + average daily return
+    # Simple baseline
     last_price = y_train[-1]
-    avg_return = np.mean(np.diff(y_train) / y_train[:-1])
+    avg_return = np.mean(np.diff(y_train) / y_train[:-1]) if len(y_train) > 1 else 0
     baseline_pred = last_price * (1 + avg_return * horizon)
     baseline_mae_pct = np.mean(np.abs((baseline_pred - y_test) / y_test)) * 100
 
@@ -134,9 +139,9 @@ def predict(coin_id: str, interval: str, horizon: int) -> PredictionResult:
     latest_features = _engineer_features(df).iloc[-1].values.reshape(1, -1)
     latest_features = (latest_features - mean) / std
 
-    # Predict percentage change (scaled) – in this simple model we predict absolute price change ratio
+    # Predict
     predicted_change = model.predict(latest_features)
-    predicted_price = current_price * (1 + predicted_change)  # Adjust if model outputs price ratio
+    predicted_price = current_price * (1 + predicted_change)
 
     direction = 'UP' if predicted_price > current_price else 'DOWN'
     change_pct = ((predicted_price - current_price) / current_price) * 100
