@@ -100,6 +100,66 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(fetchMovers, 60000);
 });
 
+// History Page (New)
+document.addEventListener('DOMContentLoaded', function() {
+  const tableBody = document.getElementById('history-table-body');
+  if (!tableBody) return;
+  
+  async function fetchHistory() {
+    try {
+      const response = await fetch('/api/predictions');
+      if (!response.ok) throw new Error('API Error: ' + response.status);
+      const data = await response.json();
+      const predictions = data.predictions || [];
+      
+      // Update Summary
+      const summary = data.summary || {};
+      document.getElementById('summary-total').textContent = summary.total || 0;
+      document.getElementById('summary-resolved').textContent = summary.resolved || 0;
+      document.getElementById('summary-accuracy').textContent = summary.avg_accuracy ? summary.avg_accuracy + '%' : 'N/A';
+      document.getElementById('summary-correct').textContent = summary.correct_count || 0;
+      
+      // Render Table
+      let html = '';
+      for (const pred of predictions) {
+        const created = new Date(pred.created_at_utc).toLocaleString();
+        const coinId = pred.coin_id || 'Unknown';
+        const horizon = pred.horizon_label || pred.horizon;
+        const predicted = `$${Number(pred.predicted_price).toLocaleString(undefined, { maximumFractionDigits: 8 })}`;
+        const currentPrice = `$${Number(pred.current_price).toLocaleString(undefined, { maximumFractionDigits: 8 })}`;
+        const actual = pred.actual_price ? `$${Number(pred.actual_price).toLocaleString(undefined, { maximumFractionDigits: 8 })}` : '---';
+        const accuracy = pred.percentage_accuracy !== null && pred.percentage_accuracy !== undefined ? `<span class="positive">${pred.percentage_accuracy.toFixed(2)}%</span>` : '---';
+        const direction = pred.direction_correct === true ? '<span class="positive">Correct</span>' : (pred.direction_correct === false ? '<span class="negative">Wrong</span>' : 'Pending');
+        const statusClass = pred.status === 'resolved' ? 'positive' : 'muted';
+        
+        html += `<tr>
+          <td>${created}</td>
+          <td>${coinId}</td>
+          <td>${horizon}</td>
+          <td>${predicted}</td>
+          <td>${currentPrice}</td>
+          <td>${actual}</td>
+          <td>${accuracy}</td>
+          <td>${direction}</td>
+          <td class="${statusClass}">${pred.status}</td>
+        </tr>`;
+      }
+      
+      if (html === '') {
+        tableBody.innerHTML = '<tr><td colspan="9">No predictions yet. Go to the Predict page!</td></tr>';
+      } else {
+        tableBody.innerHTML = html;
+      }
+    } catch (error) {
+      console.error('Error fetching history:', error);
+      tableBody.innerHTML = '<tr><td colspan="9" style="color: #ef4444;">Unable to load history.</td></tr>';
+    }
+  }
+  
+  fetchHistory();
+  setInterval(fetchHistory, 30000);
+});
+
 // Prediction form logic
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.querySelector('#predict-form');

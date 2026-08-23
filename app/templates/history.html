@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Runguard AI · History{% endblock %}
+{% block content %}
+<section class="page">
+  <p class="eyebrow">Prediction Ledger</p>
+  <h1>Prediction History</h1>
+  <p class="lead">Track all your previous predictions and see how accurate they were once the timeframe has elapsed.</p>
+
+  <div class="summary-stats">
+    <div class="panel">
+      <span>Total Predictions</span>
+      <strong id="summary-total">0</strong>
+    </div>
+    <div class="panel">
+      <span>Resolved</span>
+      <strong id="summary-resolved">0</strong>
+    </div>
+    <div class="panel">
+      <span>Avg Accuracy</span>
+      <strong id="summary-accuracy">N/A</strong>
+    </div>
+    <div class="panel">
+      <span>Correct Direction</span>
+      <strong id="summary-correct">0</strong>
+    </div>
+  </div>
+
+  <div class="table-wrapper" style="margin-top: 24px;">
+    <table class="price-table history-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Coin</th>
+          <th>Horizon</th>
+          <th>Predicted Price</th>
+          <th>Live Price at Prediction</th>
+          <th>Live Price After Timeframe</th>
+          <th>Accuracy</th>
+          <th>Direction</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="history-table-body">
+        <tr><td colspan="9">Loading prediction history...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

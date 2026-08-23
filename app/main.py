@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from config import COIN_MAP, COINS, HORIZONS, FEATURES, WINDOW_SIZE
 from app.services.predictor import predict
 from app.services.data import load_candles, retry_queue_status, normalize_coin_id, fetch_current_prices
-from app.services.predictions import list_predictions, prediction_summary, resolve_due_predictions
+from app.services.predictions import list_predictions, prediction_summary, resolve_due_predictions, save_prediction
 from app.services.backtest import walk_forward_backtest
 
 ROOT = Path(__file__).resolve().parent
@@ -41,6 +41,12 @@ def market_page(request: Request):
     return templates.TemplateResponse(request=request, name='market.html', context={**base_context(request), 'page': 'market'})
 
 
+@app.get('/history', response_class=HTMLResponse)
+def history_page(request: Request):
+    resolve_due_predictions()
+    return templates.TemplateResponse(request=request, name='history.html', context={**base_context(request), 'page': 'history'})
+
+
 @app.get('/charts', response_class=HTMLResponse)
 def charts_page(request: Request):
     return templates.TemplateResponse(request=request, name='charts.html', context={**base_context(request), 'page': 'charts'})
@@ -52,25 +58,26 @@ def predict_page(request: Request):
 
 
 @app.post('/predict', response_class=HTMLResponse)
-def predict_form(
-    request: Request,
-    coin_id: str = Form(...),
-    interval: str = Form(...),
-    horizon: int = Form(...),
-):
-    context = {
-        **base_context(request),
-        'page': 'predict',
-        'horizons': HORIZONS,
-        'selected_coin': coin_id,
-        'selected_interval': interval,
-        'selected_horizon': horizon,
-    }
+def predict_form(request: Request, coin_id: str = Form(...), interval: str = Form(...), horizon: int = Form(...)):
+    context = {**base_context(request), 'page': 'predict', 'horizons': HORIZONS, 'selected_coin': coin_id, 'selected_interval': interval, 'selected_horizon': horizon}
     try:
         coin_id = normalize_coin_id(coin_id)
         if interval not in HORIZONS or horizon not in HORIZONS[interval]:
             raise ValueError('Invalid candle interval or prediction horizon.')
         result = predict(coin_id, interval, horizon)
+        # Save prediction to history
+        save_prediction(
+            coin_id=coin_id,
+            interval=interval,
+            horizon=horizon,
+            predicted_price=result.predicted_price,
+            current_price=result.current_price,
+            horizon_label=result.horizon_label,
+            strategy=result.strategy,
+            validation_mae_pct=result.validation_mae_pct,
+            baseline_validation_mae_pct=result.baseline_validation_mae_pct,
+            target_time_utc=result.target_time_utc
+        )
         context['prediction'] = {**result.__dict__, 'coin_id': coin_id, 'coin_name': COIN_MAP[coin_id]['name'], 'symbol': COIN_MAP[coin_id]['symbol']}
     except Exception as exc:
         context['prediction_error'] = str(exc)
@@ -97,13 +104,25 @@ def api_predict(payload: PredictRequest):
         raise HTTPException(status_code=400, detail='Invalid interval or horizon.')
     try:
         result = predict(coin_id, payload.interval, payload.horizon)
+        save_prediction(
+            coin_id=coin_id,
+            interval=payload.interval,
+            horizon=payload.horizon,
+            predicted_price=result.predicted_price,
+            current_price=result.current_price,
+            horizon_label=result.horizon_label,
+            strategy=result.strategy,
+            validation_mae_pct=result.validation_mae_pct,
+            baseline_validation_mae_pct=result.baseline_validation_mae_pct,
+            target_time_utc=result.target_time_utc
+        )
+        data = result.__dict__
+        data['coin_id'] = coin_id
+        data['coin_name'] = COIN_MAP[coin_id]['name']
+        data['symbol'] = COIN_MAP[coin_id]['symbol']
+        return data
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-    data = result.__dict__
-    data['coin_id'] = coin_id
-    data['coin_name'] = COIN_MAP[coin_id]['name']
-    data['symbol'] = COIN_MAP[coin_id]['symbol']
-    return data
 
 
 @app.post('/api/backtest')
