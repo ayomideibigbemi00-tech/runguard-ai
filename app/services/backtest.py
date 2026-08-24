@@ -23,13 +23,25 @@ def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 def _train_model(df, horizon, test_fraction=0.20, refit_every=24):
     """Train the neural network for a single backtest window."""
     features_df = _engineer_features(df)
-    target = df['close'].shift(-horizon).rename('target')
+
+    # Train on the % return to the target candle, not the raw close price.
+    # Raw prices are wildly outside the scale the network's weights are
+    # initialized for, so training on them directly makes the gradients
+    # explode within a couple of epochs (the network outputs NaN forever
+    # after). Returns are small and roughly zero-centered, which this size
+    # of network can actually learn. See predictor.py for the same fix.
+    anchor_close = df['close']
+    future_close = df['close'].shift(-horizon)
+    target = ((future_close / anchor_close) - 1.0).rename('target')
 
     combined = pd.concat([features_df, target], axis=1)
     combined = combined.dropna()
 
     X = combined[FEATURES].values.astype(np.float64)
     y = combined['target'].values.astype(np.float64)
+    # 'close' is already one of FEATURES, so this is just each row's own
+    # anchor price - the price the % return was computed relative to.
+    anchor = combined['close'].values.astype(np.float64)
 
     X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
     y = np.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0)
@@ -40,29 +52,52 @@ def _train_model(df, horizon, test_fraction=0.20, refit_every=24):
     split = int(len(X) * (1 - test_fraction))
     X_train, X_test = X[:split], X[split:]
     y_train, y_test = y[:split], y[split:]
+    anchor_test = anchor[split:]
 
     mean = X_train.mean(axis=0)
     std = X_train.std(axis=0) + 1e-8
-    X_train = (X_train - mean) / std
-    X_test = (X_test - mean) / std
+    # Clip standardized features: CoinGecko's market_chart endpoint only
+    # gives one price per candle, so open/high/low/close collapse to the
+    # same value for almost every row and 'range_pct' ends up with
+    # near-zero variance. Any row where it's briefly nonzero would
+    # otherwise standardize into a huge outlier and destabilize training.
+    X_train = np.clip((X_train - mean) / std, -5.0, 5.0)
+    X_test = np.clip((X_test - mean) / std, -5.0, 5.0)
+
+    # Standardize the target the same way the inputs are standardized.
+    # This is the missing piece that used to make training diverge.
+    y_mean = y_train.mean()
+    y_std = y_train.std() + 1e-8
+    y_train_scaled = (y_train - y_mean) / y_std
 
     # Train neural network
     model = NeuralNetwork(input_size=X_train.shape[1], hidden_size=32, learning_rate=0.01)
-    model.train(X_train, y_train, epochs=200)
+    model.train(X_train, y_train_scaled, epochs=200)
 
     # Evaluate
-    y_pred_test = np.array([model.predict(x.reshape(1, -1)) for x in X_test])
-    y_pred_test = np.nan_to_num(y_pred_test, nan=0.0, posinf=0.0, neginf=0.0)
-    
-    mae = np.mean(np.abs(y_pred_test - y_test))
-    mae_pct = np.mean(np.abs((y_pred_test - y_test) / y_test)) * 100
-    
-    # Baseline
-    baseline_pred = np.full_like(y_test, y_train[-1])
-    baseline_mae = np.mean(np.abs(baseline_pred - y_test))
-    baseline_mae_pct = np.mean(np.abs((baseline_pred - y_test) / y_test)) * 100
+    y_pred_test_scaled = np.array([model.predict(x.reshape(1, -1)) for x in X_test])
+    y_pred_test_scaled = np.nan_to_num(y_pred_test_scaled, nan=0.0, posinf=0.0, neginf=0.0)
+    y_pred_test = y_pred_test_scaled * y_std + y_mean
 
-    return mae, mae_pct, baseline_mae, baseline_mae_pct
+    # Report error in price terms (easier to read than raw return numbers),
+    # rebuilding a price from each test row's own anchor close price.
+    pred_price = anchor_test * (1.0 + y_pred_test)
+    actual_price = anchor_test * (1.0 + y_test)
+
+    mae = np.mean(np.abs(pred_price - actual_price))
+    mae_pct = np.mean(np.abs((pred_price - actual_price) / actual_price)) * 100
+
+    # Baseline: "tomorrow looks like the most recent known return"
+    baseline_price = anchor_test * (1.0 + y_train[-1])
+    baseline_mae = np.mean(np.abs(baseline_price - actual_price))
+    baseline_mae_pct = np.mean(np.abs((baseline_price - actual_price) / actual_price)) * 100
+
+    # Directional accuracy: did the model get the sign of the move right?
+    # (Comparing predicted vs. actual return sign is well-defined per row,
+    # unlike comparing consecutive test rows to each other.)
+    directional_accuracy = float(np.mean(np.sign(y_pred_test) == np.sign(y_test)) * 100)
+
+    return mae, mae_pct, baseline_mae, baseline_mae_pct, directional_accuracy
 
 
 def walk_forward_backtest(
@@ -85,32 +120,9 @@ def walk_forward_backtest(
         raise ValueError("No historical data available")
 
     # Train and evaluate
-    mae, mae_pct, baseline_mae, baseline_mae_pct = _train_model(
+    mae, mae_pct, baseline_mae, baseline_mae_pct, correct_direction = _train_model(
         df, horizon, test_fraction=test_fraction, refit_every=refit_every
     )
-
-    # Directional accuracy (for this test window)
-    features_df = _engineer_features(df)
-    target = df['close'].shift(-horizon).rename('target')
-    combined = pd.concat([features_df, target], axis=1).dropna()
-    
-    y_true = combined['target'].values
-    X_all = combined[FEATURES].values.astype(np.float64)
-    
-    if len(X_all) > 30:
-        split = int(len(X_all) * (1 - test_fraction))
-        y_test_actual = y_true[split:]
-        
-        # Direction correctness
-        directions_true = np.sign(y_test_actual[1:] - y_test_actual[:-1])
-        directions_pred = np.sign(y_pred_test[1:] - y_pred_test[:-1]) if len(y_pred_test) > 1 else np.array([0])
-        
-        if len(directions_pred) < len(directions_true):
-            directions_pred = np.pad(directions_pred, (0, len(directions_true) - len(directions_pred)), 'constant')
-        
-        correct_direction = np.sum(directions_true == directions_pred) / len(directions_true) * 100
-    else:
-        correct_direction = 0.0
 
     return {
         'coin_id': coin_id,
