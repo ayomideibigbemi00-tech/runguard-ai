@@ -2,7 +2,7 @@
 
 ## Multi-Horizon Cryptocurrency Forecasting with a Neural Network
 
-Runguard AI is a web application that uses a neural network built from scratch with NumPy to forecast cryptocurrency prices across multiple timeframes. It provides live price data, interactive charts, and prediction tools for up to 50 cryptocurrencies.
+Runguard AI is a web application that uses a neural network built from scratch with NumPy to forecast cryptocurrency prices across multiple timeframes. It provides live price data, interactive charts, and prediction tools for up to 20 cryptocurrencies.
 
 ---
 
@@ -82,7 +82,7 @@ The neural network is implemented **from scratch** using only NumPy, with no ext
 ### Training:
 - **Optimizer**: Gradient Descent
 - **Loss Function**: Mean Squared Error (MSE)
-- **Validation**: Chronological split (70/15/15)
+- **Validation**: Chronological split (80/20)
 
 ### Ensemble Strategy:
 The model compares its predictions against a **simple recent-return baseline** and selects the better-performing strategy on validation data, ensuring robustness.

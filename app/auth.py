@@ -9,7 +9,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-fallback-key-12345")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 def hash_password(password: str) -> str:
-    # bcrypt has a 72-byte limit, so we truncate safely
+    # bcrypt has a 72-byte limit
     return bcrypt.hashpw(password.encode('utf-8')[:72], bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(password: str, hashed: str) -> bool:

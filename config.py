@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-# Use the Railway Volume mount point for persistent data.
+# Railway Volume mount point for persistent data.
 DATA_DIR = Path('/app/data') if os.getenv('RAILWAY_ENVIRONMENT') else Path(__file__).resolve().parent / 'data'
 CACHE_DIR = DATA_DIR / 'cache'
 MODELS_DIR = DATA_DIR / 'models'

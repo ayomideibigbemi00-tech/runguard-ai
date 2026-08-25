@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// History page: attach countdown to pending predictions
+// History page
 document.addEventListener('DOMContentLoaded', function() {
   const tableBody = document.getElementById('history-table-body');
   if (!tableBody) return;

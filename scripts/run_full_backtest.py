@@ -60,7 +60,7 @@ def main() -> int:
     print('CoinGecko data is ingested once into the local cache; the backtester reads local data.')
     print(f'Output: {out}')
 
-    # Perform ingestion with up to 3 retry passes for network resilience
+    # Perform ingestion with up to 3 retry passes   
     ingestion = None
     for attempt in range(3):
         ingestion = ingest_jobs(jobs, force_refresh=args.force_refresh, max_passes=args.max_ingest_passes)

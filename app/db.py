@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-# Use the Railway volume mount point
+#Railway volume mount point
 DB_PATH = Path('/app/data') / 'app.db'
 
 def get_db():
@@ -10,7 +10,7 @@ def get_db():
     return conn
 
 def init_db():
-    # Ensure the volume directory exists
+    # volume directory 
     Path('/app/data').mkdir(parents=True, exist_ok=True)
     
     conn = get_db()
