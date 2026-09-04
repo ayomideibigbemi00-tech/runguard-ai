@@ -28,26 +28,23 @@ class PredictionResult:
 
 
 def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    # feature engineering: turn raw OHLC candles into model inputs
     df = df.copy()
-    df['return_1'] = df['close'].pct_change(1)
-    df['return_3'] = df['close'].pct_change(3)
-    df['return_6'] = df['close'].pct_change(6)
-    df['sma_7'] = df['close'].rolling(window=7).mean()
-    df['sma_20'] = df['close'].rolling(window=20).mean()
-    df['volatility_7'] = df['close'].pct_change().rolling(window=7).std()
-    df['range_pct'] = (df['high'] - df['low']) / df['close']
+    df['return_1'] = df['close'].pct_change(1)     # 1-candle % change
+    df['return_3'] = df['close'].pct_change(3)      # 3-candle % change
+    df['return_6'] = df['close'].pct_change(6)      # 6-candle % change
+    df['sma_7'] = df['close'].rolling(window=7).mean()    # 7-period moving average
+    df['sma_20'] = df['close'].rolling(window=20).mean()  # 20-period moving average
+    df['volatility_7'] = df['close'].pct_change().rolling(window=7).std()  # rolling std of returns
+    df['range_pct'] = (df['high'] - df['low']) / df['close']  # candle range as % of price
     return df[FEATURES]
 
 
 def _train_model(df, horizon):
     features_df = _engineer_features(df)
 
-    # Train on the % return to the target candle, not the raw close price.
-    # Raw prices (e.g. $78,000) are wildly outside the scale the network's
-    # weights are initialized for, so training on them directly makes the
-    # gradients explode within a couple of epochs (the network outputs NaN
-    # forever after). Returns are small and roughly zero-centered, which
-    # this size of network can actually learn.
+    # target (y) = % return to the target candle: (future_close / anchor_close) - 1
+    # trained on % return, not raw price, so the network's small weights don't explode
     anchor_close = df['close']
     future_close = df['close'].shift(-horizon)
     target = ((future_close / anchor_close) - 1.0).rename('target')
@@ -57,9 +54,7 @@ def _train_model(df, horizon):
 
     X = combined[FEATURES].values.astype(np.float64)
     y = combined['target'].values.astype(np.float64)
-    # 'close' is already one of FEATURES, so this is just each row's own
-    # anchor price - the price the % return was computed relative to.
-    anchor = combined['close'].values.astype(np.float64)
+    anchor = combined['close'].values.astype(np.float64)  # anchor price per row (for rebuilding price later)
 
     X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
     y = np.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0)
@@ -67,41 +62,38 @@ def _train_model(df, horizon):
     if len(X) < 30:
         raise ValueError("Not enough data")
 
+    # chronological 80/20 split (not shuffled, to avoid leaking future data into training)
     split = int(len(X) * 0.8)
     X_train, X_test = X[:split], X[split:]
     y_train, y_test = y[:split], y[split:]
     anchor_test = anchor[split:]
 
+    # standardize inputs (z-score): X_scaled = (X - mean) / std, fit on train set only
     x_mean = X_train.mean(axis=0)
     x_std = X_train.std(axis=0) + 1e-8
-    X_train = np.clip((X_train - x_mean) / x_std, -5.0, 5.0)
+    X_train = np.clip((X_train - x_mean) / x_std, -5.0, 5.0)   # clip outliers to +/-5 std
     X_test = np.clip((X_test - x_mean) / x_std, -5.0, 5.0)
-    # Clipping matters here specifically: CoinGecko's market_chart endpoint
-    # only gives one price per candle, so open/high/low/close collapse to
-    # the same value for almost every historical row and 'range_pct' ends
-    # up with near-zero variance. A live row where it's briefly nonzero
-    # would otherwise standardize into a many-thousand-sigma outlier and
-    # blow up the network's output.
 
-    # Standardize the target the same way the inputs are standardized.
-    # This is the missing piece that used to make training diverge.
+    # standardize target the same way
     y_mean = y_train.mean()
     y_std = y_train.std() + 1e-8
     y_train_scaled = (y_train - y_mean) / y_std
 
+    # --- train the neural network (see network.py for forward pass / backprop) ---
     model = NeuralNetwork(input_size=X_train.shape[1], hidden_size=32, learning_rate=0.01)
     model.train(X_train, y_train_scaled, epochs=200)
 
+    # validate on held-out test set (un-scale predictions back to % return, then price)
     y_pred_test_scaled = np.array([model.predict(x.reshape(1, -1)) for x in X_test])
     y_pred_test_scaled = np.nan_to_num(y_pred_test_scaled, nan=0.0, posinf=0.0, neginf=0.0)
-    y_pred_test = y_pred_test_scaled * y_std + y_mean
+    y_pred_test = y_pred_test_scaled * y_std + y_mean   # un-standardize: reverse of (y - mean) / std
 
-    # Report error in price terms (easier to read than raw return numbers),
-    # using each test row's own anchor close price to rebuild a price.
+    # MAE% = mean absolute error, in price terms
     pred_price = anchor_test * (1.0 + y_pred_test)
     actual_price = anchor_test * (1.0 + y_test)
     mae_pct = np.mean(np.abs((pred_price - actual_price) / actual_price)) * 100
 
+    # naive baseline (predict "no change") for comparison
     baseline_price = anchor_test * (1.0 + y_train[-1])
     baseline_mae_pct = np.mean(np.abs((baseline_price - actual_price) / actual_price)) * 100
 
@@ -123,24 +115,23 @@ def predict(coin_id: str, interval: str, horizon: int, user_id: int) -> Predicti
     if df is None or df.empty:
         raise ValueError("No historical data")
 
+    # train a fresh model live for this request
     model, x_mean, x_std, y_mean, y_std, validation_mae, baseline_mae = _train_model(df, horizon)
 
+    # build + standardize the latest feature row ("right now")
     latest_features = _engineer_features(df).iloc[-1].values.reshape(1, -1).astype(np.float64)
     latest_features = np.nan_to_num(latest_features, nan=0.0, posinf=0.0, neginf=0.0)
     latest_features = np.clip((latest_features - x_mean) / x_std, -5.0, 5.0)
 
+    # --- forward pass (inference) ---
     predicted_return_scaled = model.predict(latest_features)
     predicted_return_scaled = np.nan_to_num(predicted_return_scaled, nan=0.0, posinf=0.0, neginf=0.0)
-    predicted_return = float(predicted_return_scaled) * y_std + y_mean
+    predicted_return = float(predicted_return_scaled) * y_std + y_mean  # un-standardize
 
-    # Safety net only: with a properly scaled target the network shouldn't
-    # produce anything like this, but never let one bad weight update turn
-    # into a nonsense price on screen (e.g. a coin going to $0 or 100x).
+    # safety clip: never let one bad weight update produce a nonsense price
     predicted_return = float(np.clip(predicted_return, -0.9, 5.0))
 
-    # Anchor the prediction to the live price rather than whatever price
-    # happened to be last in the historical candle cache - this is the
-    # "live-anchored" part of the app.
+    # live-anchor: apply predicted % return to the LIVE price, not the last cached candle
     predicted_price = current_price * (1.0 + predicted_return)
 
     direction = 'UP' if predicted_price > current_price else 'DOWN'
